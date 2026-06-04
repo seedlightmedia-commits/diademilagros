@@ -47,7 +47,7 @@ export function RecentEventsSection() {
         <div className="text-center mb-8">
           {/* Se eliminó 'tracking-widest' para que las letras se unan de forma compacta y natural como en el pantallazo */}
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-heading text-white mb-2 uppercase">
-            ULTIMOS EVENTOS
+            ÚLTIMOS EVENTOS
           </h2>
           {/* Se aplicó font-montserrat para activar Nexa Regular con el tamaño exacto de la imagen */}
           <p className="font-montserrat font-normal text-white text-base md:text-xl lg:text-2xl">
