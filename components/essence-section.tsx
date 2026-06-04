@@ -77,7 +77,7 @@ const essenceItems = [
     title: "SALVACIÓN",
     description: "Oportunidad para creer en Jesús.",
     icon: <CrossIcon />,
-    image: "Salvacion.png",
+    image: "/Salvacion.png",
     cardPosition: "right", 
   },
   {
