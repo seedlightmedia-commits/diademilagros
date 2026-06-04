@@ -85,7 +85,7 @@ const essenceItems = [
     title: "AVIVAMIENTO",
     description: "Renovación del corazón",
     icon: <FlameIcon />,
-    image: "/Avivamiento.jpg",
+    image: "/Avivamiento.png",
     cardPosition: "left", 
   },
 ];
