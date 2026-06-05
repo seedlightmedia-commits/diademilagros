@@ -9,7 +9,7 @@ export function AboutSection() {
         <div className="max-w-2xl mx-auto text-center">
           <div className="flex justify-center mb-6">
             <Image
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/LOGOS_PRINCIPAL%20ISO-vbgjkk5Iu1XugGcjzft7uk5SQ7eLzY.png"
+              src="/apple-icon.png"
               alt="Día de Milagros"
               width={60}
               height={60}

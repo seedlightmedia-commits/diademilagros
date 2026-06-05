@@ -162,7 +162,7 @@ export function UpcomingEventsSection() {
                 />
               </div>
               <div className="p-4">
-                <h3 className="text-xl md:text-3xl font-extrabold text-primary mb-3 leading-tight">
+                <h3 className="text-xl md:text-3xl font-extrabold text-[#ff7542] mb-3 leading-tight">
                   {event.title}
                 </h3>
 
@@ -181,7 +181,7 @@ export function UpcomingEventsSection() {
 
                 <Button
                   size="sm"
-                  className="w-full bg-primary hover:bg-primary/90 text-white text-sm md:text-base py-3 px-5 rounded-xl transition-colors duration-200"
+                  className="w-full bg-[#ff7542] hover:bg-[#ff7542]/90 text-white text-sm md:text-base py-3 px-5 rounded-xl transition-colors duration-200"
                   onClick={() => setSelectedEvent(event)}
                 >
                   Regístrame aquí
@@ -196,7 +196,7 @@ export function UpcomingEventsSection() {
       <Dialog open={!!selectedEvent} onOpenChange={closeDialog}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-primary font-bold text-center">
+            <DialogTitle className="text-[#ff7542] font-bold text-center">
               {registrationComplete ? "¡Registro Exitoso!" : `Registro - ${selectedEvent?.title}`}
             </DialogTitle>
           </DialogHeader>
@@ -218,7 +218,7 @@ export function UpcomingEventsSection() {
                   Se ha enviado un código QR a {formData.email}
                 </p>
               )}
-              <Button className="mt-4 bg-primary hover:bg-primary/90" onClick={closeDialog}>
+              <Button className="mt-4 bg-[#ff7542] hover:bg-[#ff7542]/90" onClick={closeDialog}>
                 Cerrar
               </Button>
             </div>
