@@ -40,7 +40,7 @@ export function RecentEventsSection() {
         }}
       />
       {/* Orange Overlay */}
-      <div className="absolute inset-0 bg-primary/85" />
+      <div className="absolute inset-0 bg-[#ff9b00]/85" />
 
      <div className="container mx-auto px-4 relative z-10">
         {/* Header */}
