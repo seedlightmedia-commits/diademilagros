@@ -143,7 +143,7 @@ export function UpcomingEventsSection() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-8">
           <h2 className="text-lg md:text-xl font-bold text-brand-dark">
-            ADQUIERE TUS ENTRADAS A NUEVO EVENTOS
+            ADQUIERE TUS ENTRADAS A NUEVOS EVENTOS
           </h2>
         </div>
 
