@@ -91,10 +91,10 @@ const essenceItems = [
 ];
 
 const gradients = [
-  "from-[#E8A838] via-[#E8A838] to-[#D4932A]",
-  "from-[#EAAD3B] via-[#E8A838] to-[#D49328]",
-  "from-[#E8A838] via-[#EAAD3B] to-[#D4932A]",
-  "from-[#EAAD3B] via-[#E8A838] to-[#CF8E25]",
+  "from-[#ffc972] via-[#ffc972] to-[#ff9b00]",
+  "from-[#ffc972] via-[#ffc972] to-[#ff9b00]",
+  "from-[#ffc972] via-[#ffc972] to-[#ff9b00]",
+  "from-[#ffc972] via-[#ffc972] to-[#ff9b00]",
 ];
 
 function EssenceCard({ item, index }: { item: typeof essenceItems[0]; index: number }) {
