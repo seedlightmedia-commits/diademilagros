@@ -34,7 +34,7 @@ const topRowImages = [
     width: 180,
   },
   {
-    src: "Cine7.jpg",
+    src: "cine71.png",
     alt: "Galería 7",
     width: 140,
   },
