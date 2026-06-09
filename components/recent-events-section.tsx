@@ -45,16 +45,13 @@ export function RecentEventsSection() {
      <div className="container mx-auto px-4 relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
-          {/* Se eliminó 'tracking-widest' para que las letras se unan de forma compacta y natural como en el pantallazo */}
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-heading text-white mb-2 uppercase">
             ÚLTIMOS EVENTOS
           </h2>
-          {/* Se aplicó font-montserrat para activar Nexa Regular con el tamaño exacto de la imagen */}
           <p className="font-montserrat font-normal text-white text-base md:text-xl lg:text-2xl">
             Testimonios de transformación en Barcelona
           </p>
         </div>
-
 
         {/* Video Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
@@ -67,12 +64,14 @@ export function RecentEventsSection() {
               {/* Video Thumbnail */}
               <video
                 ref={(el) => { videoRefs.current[index] = el; }}
-                src={event.videoUrl}
+                src={`${event.videoUrl}#t=0.001`}
                 className="w-full h-full object-cover"
                 muted
                 playsInline
-                preload="metadata"
-                onMouseEnter={(e) => e.currentTarget.play()}
+                preload="auto"
+                onMouseEnter={(e) => {
+                  e.currentTarget.play().catch(() => {});
+                }}
                 onMouseLeave={(e) => {
                   e.currentTarget.pause();
                   e.currentTarget.currentTime = 0;
@@ -104,6 +103,7 @@ export function RecentEventsSection() {
                 className="w-full h-full"
                 controls
                 autoPlay
+                playsInline
               />
             )}
           </div>
