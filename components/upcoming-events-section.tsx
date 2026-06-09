@@ -19,7 +19,7 @@ const upcomingEvents = [
     time: "17h - 21H",
     location: "Para quienes se encuentren en la cuidad de Barcelona", // Mantiene tu texto exacto
     image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Recurso2-L79daDs96bLxTYnUfYRMqIv59CTGaB.jpg",
-    note: "Este evento es para personas mayores de edad. Y es totalmente gratis.",
+    note: "Este evento es para toda la familia. Y es totalmente gratis.",
     isFree: true,
     price: 0,
   },
@@ -30,7 +30,7 @@ const upcomingEvents = [
     time: "17H - 21H",
     location: "Para quienes se encuentren en la cuidad de Barcelona", // Mantiene tu texto exacto
     image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Recurso3-R2JDtJacHbQ8U6fet0xIITCAMhjAAt.jpg",
-    note: "Este evento es para toda la familia. Niños desde 5 años.",
+    note: "Este evento es para toda la familia. Niños desde 2 años.",
     isFree: false,
     price: 8,
   },
