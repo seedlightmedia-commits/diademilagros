@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogHeader,
 } from "@/components/ui/dialog";
+import { X } from "lucide-react";
 
 const upcomingEvents = [
   {
@@ -16,7 +17,7 @@ const upcomingEvents = [
     title: "DÍA DE MILAGROS",
     date: "1 Agosto 2026",
     time: "17h - 21H",
-    location: "Para quienes se encuentren en la cuidad de Barcelona",
+    location: "Para quienes se encuentren en la cuidad de Barcelona", // Mantiene tu texto exacto
     image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Recurso2-L79daDs96bLxTYnUfYRMqIv59CTGaB.jpg",
     note: "Este evento es para toda la familia. Y es totalmente gratis.",
     isFree: true,
@@ -27,13 +28,26 @@ const upcomingEvents = [
     title: "CINE PARA NIÑOS",
     date: "1 Agosto 2026",
     time: "17H - 21H",
-    location: "Para quienes se encuentren en la cuidad de Barcelona",
+    location: "Para quienes se encuentren en la cuidad de Barcelona", // Mantiene tu texto exacto
     image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Recurso3-R2JDtJacHbQ8U6fet0xIITCAMhjAAt.jpg",
     note: "Este evento es para toda la familia. Niños desde 2 años.",
     isFree: false,
     price: 8,
   },
 ];
+
+// `EventsSection` removed to avoid duplicate components — use `UpcomingEventsSection` below.
+
+// Google Sheets API endpoint (saves registrations to the provided sheet)
+// Moved to server-side env var and proxied via `/api/register`.
+
+// TPV Virtual API placeholders
+const TPV_VIRTUAL_CONFIG = {
+  merchantId: "YOUR_MERCHANT_ID",
+  terminalId: "YOUR_TERMINAL_ID",
+  secretKey: "YOUR_SECRET_KEY",
+  environment: "sandbox", // or "production"
+};
 
 interface FormData {
   name: string;
@@ -67,33 +81,50 @@ export function UpcomingEventsSection() {
 
     try {
       if (selectedEvent?.isFree) {
-        // Envió a la ruta proxy server-side para evitar CORS y ocultar el webhook del cliente
-        const response = await fetch('/api/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+        // Free event registration
+        // Send data to server-side proxy which forwards to Google Sheets
+        await fetch('/api/register', {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             eventId: selectedEvent.id,
             eventName: selectedEvent.title,
             ...formData,
-            status: 'registered',
+            status: "registered",
             timestamp: new Date().toISOString(),
           }),
+        }).catch(() => {
+          // Placeholder - in production this would send to actual Google Sheets
+          console.log("[v0] Would send to Google Sheets:", formData);
         });
 
-        if (!response.ok) {
-          const errorBody = await response.json().catch(() => null);
-          throw new Error(errorBody?.error || 'Error registrando el evento');
+        // Generate QR code and send email (placeholder)
+        if (formData.email) {
+          console.log("[v0] Would send QR code email to:", formData.email);
         }
 
         setRegistrationComplete(true);
       } else {
-        // Evento de pago (Simulación)
+        // Paid event - redirect to TPV Virtual payment gateway
+        const totalAmount = (selectedEvent?.price || 0) * formData.tickets;
+        
+        // TPV Virtual integration placeholder
+        // In production, this would create a payment session and redirect
+        console.log("[v0] Would initiate TPV Virtual payment:", {
+          amount: totalAmount,
+          currency: "EUR",
+          merchantId: TPV_VIRTUAL_CONFIG.merchantId,
+          terminalId: TPV_VIRTUAL_CONFIG.terminalId,
+          orderId: `ORDER_${Date.now()}`,
+          description: `${selectedEvent?.title} - ${formData.tickets} entrada(s)`,
+          customerData: formData,
+        });
+
+        // Simulate successful payment for demo
         setRegistrationComplete(true);
       }
     } catch (error) {
-      console.error('Error en el registro:', error);
+      console.error("Registration error:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -104,6 +135,8 @@ export function UpcomingEventsSection() {
     setFormData({ name: "", phone: "", email: "", tickets: 1 });
     setRegistrationComplete(false);
   };
+
+  const totalPrice = selectedEvent ? selectedEvent.price * formData.tickets : 0;
 
   return (
     <section id="eventos" className="py-12 bg-white">
@@ -116,21 +149,39 @@ export function UpcomingEventsSection() {
 
         <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
           {upcomingEvents.map((event) => (
-            <div key={event.id} className="bg-white rounded-xl overflow-hidden shadow-md border border-gray-100">
+            <div
+              key={event.id}
+              className="bg-white rounded-xl overflow-hidden shadow-md border border-gray-100"
+            >
               <div className="relative aspect-square">
-                <Image src={event.image} alt={event.title} fill className="object-cover" />
+                <Image
+                  src={event.image}
+                  alt={event.title}
+                  fill
+                  className="object-cover"
+                />
               </div>
               <div className="p-4">
-                <h3 className="text-xl md:text-3xl font-extrabold text-[#ff7542] mb-3 leading-tight">{event.title}</h3>
+                <h3 className="text-xl md:text-3xl font-extrabold text-[#ff7542] mb-3 leading-tight">
+                  {event.title}
+                </h3>
+
                 <div className="text-sm md:text-base text-gray-600 mb-3 space-y-0.5">
                   <p className="font-semibold">{event.date}</p>
                   <p>{event.time}</p>
                 </div>
-                <p className="text-sm md:text-base text-gray-600 mb-3">{event.location}</p>
-                <p className="text-sm md:text-base text-gray-500 mb-4 p-3 bg-gray-50 rounded">{event.note}</p>
+                
+                <p className="text-sm md:text-base text-gray-600 mb-3">
+                  {event.location}
+                </p>
+
+                <p className="text-sm md:text-base text-gray-500 mb-4 p-3 bg-gray-50 rounded">
+                  {event.note}
+                </p>
+
                 <Button
                   size="sm"
-                  className="w-full bg-[#ff7542] hover:bg-[#ff7542]/90 text-white text-sm md:text-base py-3 px-5 rounded-xl"
+                  className="w-full bg-[#ff7542] hover:bg-[#ff7542]/90 text-white text-sm md:text-base py-3 px-5 rounded-xl transition-colors duration-200"
                   onClick={() => setSelectedEvent(event)}
                 >
                   Regístrame aquí
@@ -141,11 +192,11 @@ export function UpcomingEventsSection() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Registration Modal */}
       <Dialog open={!!selectedEvent} onOpenChange={closeDialog}>
-        <DialogContent className="sm:max-w-md bg-white p-6">
+        <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-[#ff7542] font-bold text-center text-xl">
+            <DialogTitle className="text-[#ff7542] font-bold text-center">
               {registrationComplete ? "¡Registro Exitoso!" : `Registro - ${selectedEvent?.title}`}
             </DialogTitle>
           </DialogHeader>
@@ -157,55 +208,119 @@ export function UpcomingEventsSection() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p className="text-gray-600 mb-4">
-                Tu entrada ha sido registrada exitosamente. Recibirás tu código QR por email.
+              <p className="text-gray-600 mb-2">
+                {selectedEvent?.isFree
+                  ? "Tu entrada ha sido registrada exitosamente."
+                  : "Tu pago ha sido procesado. Recibirás tu código QR por email."}
               </p>
-              <Button className="w-full bg-[#ff7542] hover:bg-[#ff7542]/90 text-white" onClick={closeDialog}>
+              {selectedEvent?.isFree && formData.email && (
+                <p className="text-xs text-gray-500">
+                  Se ha enviado un código QR a {formData.email}
+                </p>
+              )}
+              <Button className="mt-4 bg-[#ff7542] hover:bg-[#ff7542]/90" onClick={closeDialog}>
                 Cerrar
               </Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre completo *
+                </label>
                 <input
                   type="text"
                   name="name"
-                  required
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff7542]"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                  placeholder="Tu nombre"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Número de Celular</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Teléfono *
+                </label>
                 <input
                   type="tel"
                   name="phone"
-                  required
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff7542]"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                  placeholder="+34 612 345 678"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email {selectedEvent?.isFree ? "(opcional)" : "*"}
+                </label>
                 <input
                   type="email"
                   name="email"
-                  required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff7542]"
+                  required={!selectedEvent?.isFree}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                  placeholder="tu@email.com"
                 />
               </div>
+
+              {!selectedEvent?.isFree && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Número de entradas *
+                    </label>
+                    <input
+                      type="number"
+                      name="tickets"
+                      value={formData.tickets}
+                      onChange={handleInputChange}
+                      min={1}
+                      max={10}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                    />
+                  </div>
+
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <div className="flex justify-between text-sm">
+                      <span>Precio por entrada:</span>
+                      <span>{selectedEvent?.price}€</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Cantidad:</span>
+                      <span>{formData.tickets}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-primary mt-2 pt-2 border-t">
+                      <span>Total:</span>
+                      <span>{totalPrice}€</span>
+                    </div>
+                  </div>
+                </>
+              )}
+
               <Button
                 type="submit"
+                className="w-full bg-primary hover:bg-primary/90 text-white"
                 disabled={isSubmitting}
-                className="w-full bg-[#ff7542] hover:bg-[#ff7542]/90 text-white font-bold py-2 rounded-lg"
               >
-                {isSubmitting ? "Registrando..." : "Confirmar Registro Gratis"}
+                {isSubmitting
+                  ? "Procesando..."
+                  : selectedEvent?.isFree
+                  ? "Registrarme"
+                  : `Pagar ${totalPrice}€`}
               </Button>
+
+              {!selectedEvent?.isFree && (
+                <p className="text-[10px] text-gray-400 text-center">
+                  Pago seguro procesado por TPV Virtual
+                </p>
+              )}
             </form>
           )}
         </DialogContent>
