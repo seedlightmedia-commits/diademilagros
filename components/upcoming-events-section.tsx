@@ -38,8 +38,8 @@ const upcomingEvents = [
 
 // `EventsSection` removed to avoid duplicate components — use `UpcomingEventsSection` below.
 
-// Google Sheets API endpoint placeholder
-const GOOGLE_SHEETS_WEBHOOK_URL = "YOUR_GOOGLE_SHEETS_WEBHOOK_URL";
+// Google Sheets API endpoint (saves registrations to the provided sheet)
+// Moved to server-side env var and proxied via `/api/register`.
 
 // TPV Virtual API placeholders
 const TPV_VIRTUAL_CONFIG = {
@@ -82,8 +82,8 @@ export function UpcomingEventsSection() {
     try {
       if (selectedEvent?.isFree) {
         // Free event registration
-        // Send data to Google Sheets
-        await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+        // Send data to server-side proxy which forwards to Google Sheets
+        await fetch('/api/register', {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
