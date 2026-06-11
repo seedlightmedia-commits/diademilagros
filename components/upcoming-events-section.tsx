@@ -227,7 +227,7 @@ await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
               </Button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+                        <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nombre completo *
@@ -238,8 +238,7 @@ await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
                   value={formData.name}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                  placeholder="Tu nombre"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
