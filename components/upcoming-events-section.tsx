@@ -35,9 +35,6 @@ const upcomingEvents = [
   },
 ];
 
-// REEMPLAZA ESTA URL CON TU ENLACE /exec SI EL DE ABAJO NO ES EL ACTUAL
-const GOOGLE_SHEETS_WEBHOOK_URL = "https://google.com";
-
 interface FormData {
   name: string;
   phone: string;
@@ -70,19 +67,25 @@ export function UpcomingEventsSection() {
 
     try {
       if (selectedEvent?.isFree) {
-        // Envió directo a Google Sheets con mitigación de CORS y mapeo correcto de variables
-        await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
-          method: "POST",
-          mode: "no-cors", 
-          headers: { 
-            "Content-Type": "text/plain;charset=utf-8" 
+        // Envió a la ruta proxy server-side para evitar CORS y ocultar el webhook del cliente
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone
+            eventId: selectedEvent.id,
+            eventName: selectedEvent.title,
+            ...formData,
+            status: 'registered',
+            timestamp: new Date().toISOString(),
           }),
         });
+
+        if (!response.ok) {
+          const errorBody = await response.json().catch(() => null);
+          throw new Error(errorBody?.error || 'Error registrando el evento');
+        }
 
         setRegistrationComplete(true);
       } else {
@@ -90,8 +93,8 @@ export function UpcomingEventsSection() {
         setRegistrationComplete(true);
       }
     } catch (error) {
-      console.error("Error en el registro:", error);
-    } military {
+      console.error('Error en el registro:', error);
+    } finally {
       setIsSubmitting(false);
     }
   };
