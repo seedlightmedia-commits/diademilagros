@@ -40,7 +40,7 @@ const upcomingEvents = [
 // `EventsSection` removed to avoid duplicate components — use `UpcomingEventsSection` below.
 
 // Google Sheets API endpoint placeholder
-const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyZtdg-L0zGJ9euTGJqGFTY_Hu-7csWUKUrNnk2JDorQMtsXG3VaPs0G-CX_ETw3uv5fw/exec";
+const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbx7-P1fOmqi0Nmr7wNG6GbdNf0xlQcH5qUzyXymKmfN_Dit2X1R4AWILcVtnl-q_sNu_A/exec";
 
 // TPV Virtual API placeholders
 const TPV_VIRTUAL_CONFIG = {
@@ -92,7 +92,7 @@ const uniqueCode =
 // Generar imagen QR en Base64
 const qrImage = await QRCode.toDataURL(uniqueCode);
 
-const response = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+const response = await fetch("/api/register", {
   method: "POST",
   body: JSON.stringify({
     eventName: selectedEvent.title,
