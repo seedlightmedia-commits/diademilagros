@@ -2,6 +2,7 @@
 
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import Image from "next/image";
+import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -81,19 +82,28 @@ export function UpcomingEventsSection() {
 
     try {
       if (selectedEvent?.isFree) {
-  await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+  // Generar código único
+const uniqueCode =
+  "DM-" +
+  Date.now() +
+  "-" +
+  Math.floor(Math.random() * 100000);
+
+// Generar imagen QR en Base64
+const qrImage = await QRCode.toDataURL(uniqueCode);
+
+await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
   method: "POST",
-  mode: "no-cors",
   headers: {
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
-    eventId: selectedEvent.id,
     eventName: selectedEvent.title,
     name: formData.name,
     phone: formData.phone,
     email: formData.email,
-    registrationDate: new Date().toISOString(),
+    uniqueCode: uniqueCode,
+    qrImage: qrImage,
   }),
 });
 
