@@ -19,7 +19,7 @@ const upcomingEvents = [
     time: "17h - 21H",
     location: "Para quienes se encuentren en la cuidad de Barcelona", // Mantiene tu texto exacto
     image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Recurso2-L79daDs96bLxTYnUfYRMqIv59CTGaB.jpg",
-    note: "Este evento es para toda la familia. Y es totalmente gratis.",
+    note: "Este evento es para personas mayores de edad. Y es totalmente gratis.",
     isFree: true,
     price: 0,
   },
@@ -30,7 +30,7 @@ const upcomingEvents = [
     time: "17H - 21H",
     location: "Para quienes se encuentren en la cuidad de Barcelona", // Mantiene tu texto exacto
     image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Recurso3-R2JDtJacHbQ8U6fet0xIITCAMhjAAt.jpg",
-    note: "Este evento es para toda la familia. Niños desde 2 años.",
+    note: "Este evento es para toda la familia. Niños desde 5 años.",
     isFree: false,
     price: 8,
   },
@@ -38,8 +38,8 @@ const upcomingEvents = [
 
 // `EventsSection` removed to avoid duplicate components — use `UpcomingEventsSection` below.
 
-// Google Sheets API endpoint (saves registrations to the provided sheet)
-const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwBSI_deiFQldF4jnNQER4CCwx8wH4T0CxOLzQVlslGjfYP3qQZmtLeMw6suhc3I9bqaw/exec";
+// Google Sheets API endpoint placeholder
+const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbz65Z4rqNXpQnkY9L96YpQZyik4KdPD-VeJgIbJ9pSSH81PdrhuGxW8dUiZe48ShU9f6g/exec";
 
 // TPV Virtual API placeholders
 const TPV_VIRTUAL_CONFIG = {
@@ -75,40 +75,54 @@ export function UpcomingEventsSection() {
     }));
   };
 
-    const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
       if (selectedEvent?.isFree) {
-        // ENVÍO REAL DIRECTO A TU WEBHOOK DE GOOGLE SHEETS
-        await fetch(GOOGLE_SHEETS_WEBHOOK_URL = https://script.google.com/macros/s/AKfycbwBlQLzM5L4McT2tB43DHvf052wGRcST5In-vwKumL1yIBZ03zlRDISiD8SGQ9UeN87yA/exec, {
-          method: "POST",
-          mode: "no-cors", // Evita el bloqueo de seguridad CORS en el navegador
-          headers: { 
-            "Content-Type": "text/plain;charset=utf-8" // Formato compatible con Google Apps Script
-          },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone
-          }),
+  await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+  method: "POST",
+  mode: "no-cors",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    eventId: selectedEvent.id,
+    eventName: selectedEvent.title,
+    name: formData.name,
+    phone: formData.phone,
+    email: formData.email,
+    registrationDate: new Date().toISOString(),
+  }),
+});
+
+  setRegistrationComplete(true);
+      } else {
+        // Paid event - redirect to TPV Virtual payment gateway
+        const totalAmount = (selectedEvent?.price || 0) * formData.tickets;
+        
+        // TPV Virtual integration placeholder
+        // In production, this would create a payment session and redirect
+        console.log("[v0] Would initiate TPV Virtual payment:", {
+          amount: totalAmount,
+          currency: "EUR",
+          merchantId: TPV_VIRTUAL_CONFIG.merchantId,
+          terminalId: TPV_VIRTUAL_CONFIG.terminalId,
+          orderId: `ORDER_${Date.now()}`,
+          description: `${selectedEvent?.title} - ${formData.tickets} entrada(s)`,
+          customerData: formData,
         });
 
-        setRegistrationComplete(true);
-      } else {
-        // Evento de pago - Mantiene tu lógica original por ahora
-        const totalAmount = (selectedEvent?.price || 0) * formData.tickets;
-        console.log("Simulando pasarela de pago...", totalAmount);
+        // Simulate successful payment for demo
         setRegistrationComplete(true);
       }
     } catch (error) {
-      console.error("Error al enviar los datos:", error);
+      console.error("Registration error:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
-
 
   const closeDialog = () => {
     setSelectedEvent(null);
@@ -142,7 +156,7 @@ export function UpcomingEventsSection() {
                 />
               </div>
               <div className="p-4">
-                <h3 className="text-xl md:text-3xl font-extrabold text-[#ff7542] mb-3 leading-tight">
+                <h3 className="text-xl md:text-3xl font-extrabold text-primary mb-3 leading-tight">
                   {event.title}
                 </h3>
 
@@ -161,7 +175,7 @@ export function UpcomingEventsSection() {
 
                 <Button
                   size="sm"
-                  className="w-full bg-[#ff7542] hover:bg-[#ff7542]/90 text-white text-sm md:text-base py-3 px-5 rounded-xl transition-colors duration-200"
+                  className="w-full bg-primary hover:bg-primary/90 text-white text-sm md:text-base py-3 px-5 rounded-xl transition-colors duration-200"
                   onClick={() => setSelectedEvent(event)}
                 >
                   Regístrame aquí
@@ -176,7 +190,7 @@ export function UpcomingEventsSection() {
       <Dialog open={!!selectedEvent} onOpenChange={closeDialog}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
-            <DialogTitle className="text-[#ff7542] font-bold text-center">
+            <DialogTitle className="text-primary font-bold text-center">
               {registrationComplete ? "¡Registro Exitoso!" : `Registro - ${selectedEvent?.title}`}
             </DialogTitle>
           </DialogHeader>
@@ -198,7 +212,7 @@ export function UpcomingEventsSection() {
                   Se ha enviado un código QR a {formData.email}
                 </p>
               )}
-              <Button className="mt-4 bg-[#ff7542] hover:bg-[#ff7542]/90" onClick={closeDialog}>
+              <Button className="mt-4 bg-primary hover:bg-primary/90" onClick={closeDialog}>
                 Cerrar
               </Button>
             </div>
@@ -243,7 +257,7 @@ export function UpcomingEventsSection() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  required={!selectedEvent?.isFree}
+                  required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
                   placeholder="tu@email.com"
                 />
