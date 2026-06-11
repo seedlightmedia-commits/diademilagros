@@ -75,60 +75,40 @@ export function UpcomingEventsSection() {
     }));
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
       if (selectedEvent?.isFree) {
-        // Free event registration
-        // Send data to Google Sheets
-        await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+        // ENVÍO REAL DIRECTO A TU WEBHOOK DE GOOGLE SHEETS
+        await fetch(GOOGLE_SHEETS_WEBHOOK_URL = https://script.google.com/macros/s/AKfycbwBlQLzM5L4McT2tB43DHvf052wGRcST5In-vwKumL1yIBZ03zlRDISiD8SGQ9UeN87yA/exec, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          mode: "no-cors", // Evita el bloqueo de seguridad CORS en el navegador
+          headers: { 
+            "Content-Type": "text/plain;charset=utf-8" // Formato compatible con Google Apps Script
+          },
           body: JSON.stringify({
-            eventId: selectedEvent.id,
-            eventName: selectedEvent.title,
-            ...formData,
-            status: "registered",
-            timestamp: new Date().toISOString(),
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone
           }),
-        }).catch(() => {
-          // Placeholder - in production this would send to actual Google Sheets
-          console.log("[v0] Would send to Google Sheets:", formData);
         });
-
-        // Generate QR code and send email (placeholder)
-        if (formData.email) {
-          console.log("[v0] Would send QR code email to:", formData.email);
-        }
 
         setRegistrationComplete(true);
       } else {
-        // Paid event - redirect to TPV Virtual payment gateway
+        // Evento de pago - Mantiene tu lógica original por ahora
         const totalAmount = (selectedEvent?.price || 0) * formData.tickets;
-        
-        // TPV Virtual integration placeholder
-        // In production, this would create a payment session and redirect
-        console.log("[v0] Would initiate TPV Virtual payment:", {
-          amount: totalAmount,
-          currency: "EUR",
-          merchantId: TPV_VIRTUAL_CONFIG.merchantId,
-          terminalId: TPV_VIRTUAL_CONFIG.terminalId,
-          orderId: `ORDER_${Date.now()}`,
-          description: `${selectedEvent?.title} - ${formData.tickets} entrada(s)`,
-          customerData: formData,
-        });
-
-        // Simulate successful payment for demo
+        console.log("Simulando pasarela de pago...", totalAmount);
         setRegistrationComplete(true);
       }
     } catch (error) {
-      console.error("Registration error:", error);
+      console.error("Error al enviar los datos:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   const closeDialog = () => {
     setSelectedEvent(null);
