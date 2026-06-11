@@ -18,7 +18,7 @@ const upcomingEvents = [
     date: "1 Agosto 2026",
     time: "17h - 21H",
     location: "Para quienes se encuentren en la cuidad de Barcelona", // Mantiene tu texto exacto
-    image: "https://vercel-storage.com",
+    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Recurso2-L79daDs96bLxTYnUfYRMqIv59CTGaB.jpg",
     note: "Este evento es para toda la familia. Y es totalmente gratis.",
     isFree: true,
     price: 0,
@@ -29,12 +29,17 @@ const upcomingEvents = [
     date: "1 Agosto 2026",
     time: "17H - 21H",
     location: "Para quienes se encuentren en la cuidad de Barcelona", // Mantiene tu texto exacto
-    image: "https://vercel-storage.com",
+    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Recurso3-R2JDtJacHbQ8U6fet0xIITCAMhjAAt.jpg",
     note: "Este evento es para toda la familia. Niños desde 2 años.",
     isFree: false,
     price: 8,
   },
 ];
+
+// `EventsSection` removed to avoid duplicate components — use `UpcomingEventsSection` below.
+
+// Google Sheets API endpoint (saves registrations to the provided sheet)
+const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwBSI_deiFQldF4jnNQER4CCwx8wH4T0CxOLzQVlslGjfYP3qQZmtLeMw6suhc3I9bqaw/exec";
 
 // TPV Virtual API placeholders
 const TPV_VIRTUAL_CONFIG = {
@@ -76,25 +81,35 @@ export function UpcomingEventsSection() {
 
     try {
       if (selectedEvent?.isFree) {
-        // ENVIÓ REAL DIRECTO A TU WEBHOOK DE GOOGLE SHEETS
-        await fetch("https://script.google.com/macros/s/AKfycbwBlQLzM5L4McT2tB43DHvf052wGRcST5In-vwKumL1yIBZ03zlRDISiD8SGQ9UeN87yA/exec", {
+        // Free event registration
+        // Send data to Google Sheets
+        await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
           method: "POST",
-          mode: "no-cors", // Evita el bloqueo de seguridad CORS
-          headers: { 
-            "Content-Type": "text/plain;charset=utf-8" // Formato compatible con Google
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone
+            eventId: selectedEvent.id,
+            eventName: selectedEvent.title,
+            ...formData,
+            status: "registered",
+            timestamp: new Date().toISOString(),
           }),
+        }).catch(() => {
+          // Placeholder - in production this would send to actual Google Sheets
+          console.log("[v0] Would send to Google Sheets:", formData);
         });
+
+        // Generate QR code and send email (placeholder)
+        if (formData.email) {
+          console.log("[v0] Would send QR code email to:", formData.email);
+        }
 
         setRegistrationComplete(true);
       } else {
         // Paid event - redirect to TPV Virtual payment gateway
         const totalAmount = (selectedEvent?.price || 0) * formData.tickets;
         
+        // TPV Virtual integration placeholder
+        // In production, this would create a payment session and redirect
         console.log("[v0] Would initiate TPV Virtual payment:", {
           amount: totalAmount,
           currency: "EUR",
@@ -210,64 +225,106 @@ export function UpcomingEventsSection() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre completo *
+                </label>
                 <input
                   type="text"
                   name="name"
-                  required
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#ff7542]"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                  placeholder="Tu nombre"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Celular</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Teléfono *
+                </label>
                 <input
                   type="tel"
                   name="phone"
-                  required
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#ff7542]"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                  placeholder="+34 612 345 678"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email {selectedEvent?.isFree ? "(opcional)" : "*"}
+                </label>
                 <input
                   type="email"
                   name="email"
-                  required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#ff7542]"
+                  required={!selectedEvent?.isFree}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                  placeholder="tu@email.com"
                 />
               </div>
+
               {!selectedEvent?.isFree && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Entradas</label>
-                  <input
-                    type="number"
-                    name="tickets"
-                    min="1"
-                    value={formData.tickets}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#ff7542]"
-                  />
-                  <p className="text-right text-sm font-semibold text-gray-700 mt-2">Total: {totalPrice}€</p>
-                </div>
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Número de entradas *
+                    </label>
+                    <input
+                      type="number"
+                      name="tickets"
+                      value={formData.tickets}
+                      onChange={handleInputChange}
+                      min={1}
+                      max={10}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                    />
+                  </div>
+
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <div className="flex justify-between text-sm">
+                      <span>Precio por entrada:</span>
+                      <span>{selectedEvent?.price}€</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Cantidad:</span>
+                      <span>{formData.tickets}</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-primary mt-2 pt-2 border-t">
+                      <span>Total:</span>
+                      <span>{totalPrice}€</span>
+                    </div>
+                  </div>
+                </>
               )}
+
               <Button
                 type="submit"
+                className="w-full bg-primary hover:bg-primary/90 text-white"
                 disabled={isSubmitting}
-                className="w-full bg-[#ff7542] hover:bg-[#ff7542]/90 text-white font-bold py-2 rounded-lg transition-colors"
               >
-                {isSubmitting ? "Registrando..." : selectedEvent?.isFree ? "Confirmar Registro Gratis" : "Proceder al Pago"}
+                {isSubmitting
+                  ? "Procesando..."
+                  : selectedEvent?.isFree
+                  ? "Registrarme"
+                  : `Pagar ${totalPrice}€`}
               </Button>
-                        </form>
+
+              {!selectedEvent?.isFree && (
+                <p className="text-[10px] text-gray-400 text-center">
+                  Pago seguro procesado por TPV Virtual
+                </p>
+              )}
+            </form>
           )}
         </DialogContent>
       </Dialog>
     </section>
   );
 }
-
