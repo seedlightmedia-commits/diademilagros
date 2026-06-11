@@ -61,7 +61,7 @@ const essenceItems = [
     title: "PODER DE DIOS",
     description: "Sanidades y milagros como evidencia de su poder",
     icon: <RaisedHandsIcon />,
-    image: "Poder.jpg",
+    image: "Poder1.png",
     cardPosition: "right", 
   },
   {
