@@ -40,7 +40,7 @@ const upcomingEvents = [
 // `EventsSection` removed to avoid duplicate components — use `UpcomingEventsSection` below.
 
 // Google Sheets API endpoint placeholder
-const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw-9fbXhfTBSJ8FpALLssvLI_J0RPX7X3lX-RIJZxr8pCCCTMll2RRK805Ysa2X6dzf/exec";
+const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyGjAaQ55QKWILjXubF4gywlX5DwXN2bWxOZIfjnzlu11LWNDRoDBBXkZZ16oZNIFIE8g/exec";
 
 // TPV Virtual API placeholders
 const TPV_VIRTUAL_CONFIG = {
@@ -94,9 +94,6 @@ const qrImage = await QRCode.toDataURL(uniqueCode);
 
 const response = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
   method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
   body: JSON.stringify({
     eventName: selectedEvent.title,
     name: formData.name,
