@@ -92,7 +92,7 @@ const uniqueCode =
 // Generar imagen QR en Base64
 const qrImage = await QRCode.toDataURL(uniqueCode);
 
-await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -102,10 +102,10 @@ await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
     name: formData.name,
     phone: formData.phone,
     email: formData.email,
-    uniqueCode: uniqueCode,
-    qrImage: qrImage,
+    uniqueCode,
+    qrImage,
   }),
-});
+}).catch((err) => console.error(err));
 
   setRegistrationComplete(true);
       } else {
