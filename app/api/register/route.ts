@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       style="background:#ff7542;padding:40px;">
 
       <img
-      src="https://diademilagros.com"
+      src="https://diademilagros.com/LOGOS_BLANCO.png"
       width="240"
       style="display:block;margin:auto;">
 
