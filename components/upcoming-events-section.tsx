@@ -40,7 +40,7 @@ const upcomingEvents = [
 // `EventsSection` removed to avoid duplicate components — use `UpcomingEventsSection` below.
 
 // Google Sheets API endpoint placeholder
-const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbx7-P1fOmqi0Nmr7wNG6GbdNf0xlQcH5qUzyXymKmfN_Dit2X1R4AWILcVtnl-q_sNu_A/exec";
+const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbwAqeKNxZgrjsasD4BZhLv2td1EuCmj-ftc07mz4bjxzVrqrTsqP877htQnp5ilL5ZBBw/exec";
 
 // TPV Virtual API placeholders
 const TPV_VIRTUAL_CONFIG = {
