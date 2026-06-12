@@ -11,6 +11,13 @@ const GOOGLE_SCRIPT_URL =
 export async function POST(request: Request) {
   try {
     const data = await request.json();
+    
+console.log("==================================");
+console.log("Nombre:", data.name);
+console.log("Código:", data.uniqueCode);
+console.log("QR:", data.qrImage);
+console.log("Longitud QR:", data.qrImage?.length);
+console.log("==================================");
 
     // Guardar únicamente en Google Sheets
     await fetch(GOOGLE_SCRIPT_URL, {
