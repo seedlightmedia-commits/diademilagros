@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+console.log("API KEY:", process.env.RESEND_API_KEY);
+
+const resend = new Resend(process.env.RESEND_API_KEY!);
 
 const GOOGLE_SCRIPT_URL =
   process.env.GOOGLE_SHEETS_WEBHOOK_URL!;
