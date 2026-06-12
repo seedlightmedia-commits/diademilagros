@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     console.log("Longitud QR:", data.qrImage?.length);
     console.log("==================================");
 
-    // Guardar en Google Sheets
+    // Guardar en Google Sheets (Mantiene tus datos originales intactos)
     await fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       headers: {
@@ -28,8 +28,8 @@ export async function POST(request: Request) {
       body: JSON.stringify(data),
     });
 
-    // Procesar el Base64 del QR para adjuntarlo de forma segura
-    const base64Data = data.qrImage ? data.qrImage.replace(/^data:image\/\w+;base64,/, "") : "";
+    // Procesamos una copia limpia del Base64 solo para Resend sin alterar 'data'
+    const base64CleanData = data.qrImage ? data.qrImage.replace(/^data:image\/\w+;base64,/, "") : "";
 
     // Enviar correo
     const email = await resend.emails.send({
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       attachments: data.qrImage ? [
         {
           filename: 'qr-code.png',
-          content: Buffer.from(base64Data, 'base64'),
+          content: Buffer.from(base64CleanData, 'base64'),
           contentType: 'image/png',
           contentId: 'qr-code-inline',
         }
