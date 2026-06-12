@@ -28,11 +28,22 @@ export async function POST(request: Request) {
       body: JSON.stringify(data),
     });
 
+    // Procesar el Base64 del QR para adjuntarlo de forma segura
+    const base64Data = data.qrImage ? data.qrImage.replace(/^data:image\/\w+;base64,/, "") : "";
+
     // Enviar correo
     const email = await resend.emails.send({
       from: "Día de Milagros <eventos@diademilagros.com>",
       to: data.email,
       subject: "Confirmación de inscripción - DÍA DE MILAGROS",
+      attachments: data.qrImage ? [
+        {
+          filename: 'qr-code.png',
+          content: Buffer.from(base64Data, 'base64'),
+          contentType: 'image/png',
+          contentId: 'qr-code-inline',
+        }
+      ] : [],
       html: `
       <html>
       <body style="margin:0;background:#f5f5f5;font-family:Arial,sans-serif;">
@@ -49,7 +60,7 @@ export async function POST(request: Request) {
       style="background:#ff7542;padding:40px;">
 
       <img
-      src="https://diademilagros.com/LOGOS_BLANCO.png"
+      src="https://diademilagros.com"
       width="240"
       style="display:block;margin:auto;">
 
@@ -82,7 +93,7 @@ export async function POST(request: Request) {
       <div style="text-align:center;">
 
       <img
-      src="${data.qrImage}"
+      src="cid:qr-code-inline"
       width="240"
       alt="Código QR"
       style="display:block;margin:auto;">
