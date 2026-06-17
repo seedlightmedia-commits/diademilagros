@@ -22,6 +22,7 @@
     "qrcode": "^1.5.4",
     "react": "^19",
     "react-dom": "^19",
+    "redsys-easy": "^2.0.0",
     "resend": "^6.12.4",
     "shadcn": "^4.8.0",
     "tailwind-merge": "^3.3.1",
