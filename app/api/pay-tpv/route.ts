@@ -10,10 +10,10 @@ export async function POST(request: Request) {
     const terminal = process.env.REDSYS_TERMINAL || "1";
     const currency = process.env.REDSYS_CURRENCY || "978";
 
-    // Pasar a céntimos (Ej: 8€ = 800)
+    // Pasar a céntimos
     const amountInCents = Math.round(amount * 100).toString();
 
-    // Número de pedido de 12 caracteres (Se toman los últimos 8 dígitos del timestamp)
+    // Número de pedido de 12 caracteres
     const orderId = `CINE${Date.now().toString().slice(-8)}`;
 
     const merchantParams = {
@@ -29,13 +29,15 @@ export async function POST(request: Request) {
           eventName,
         })
       ),
-      DS_MERCHANT_MERCHANTURL: "https://diademilagros.com/api/tpv-webhook",
-      // 🛠️ AJUSTE 1: Parámetros para dar una respuesta visual al feligrés al regresar
-      DS_MERCHANT_URLOK: "https://diademilagros.com",
-      DS_MERCHANT_URLKO: "https://diademilagros.com",
+      DS_MERCHANT_MERCHANTURL:
+        "https://diademilagros.com/api/tpv-webhook",
+      DS_MERCHANT_URLOK:
+        "https://diademilagros.com",
+      DS_MERCHANT_URLKO:
+        "https://diademilagros.com",
     };
 
-    // Codificación Base64 de los parámetros
+    // Codificación Base64
     const merchantParametersBase64 = Buffer.from(
       JSON.stringify(merchantParams)
     ).toString("base64");
@@ -43,24 +45,24 @@ export async function POST(request: Request) {
     // Clave secreta
     const key = Buffer.from(secretKey, "base64");
 
-    // 🛠️ AJUSTE 2: Redsys exige bloques de 8 o 12 bytes para evitar la caída "Invalid block size"
-    // Usamos un bloque de 8 bytes limpio relleno de ceros y volcamos los caracteres del ID de orden
-    const order = Buffer.alloc(8, 0);
-    order.write(orderId, 0, "utf-8");
+    // Pedido en bloque de 16 bytes (múltiplo de 8 requerido por 3DES)
+    const order = Buffer.alloc(16, 0);
+    order.write(orderId);
 
     const cipher = crypto.createCipheriv(
       "des-ede3-cbc",
       key,
       Buffer.alloc(8, 0)
     );
-    cipher.setAutoPadding(false); // Requisito obligatorio de Redsys
+
+    cipher.setAutoPadding(false);
 
     const merchantKey = Buffer.concat([
       cipher.update(order),
       cipher.final(),
     ]);
 
-    // Firma HMAC SHA256
+    // Firma
     const signature = crypto
       .createHmac("sha256", merchantKey)
       .update(merchantParametersBase64)
