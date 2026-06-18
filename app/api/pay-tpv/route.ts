@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     // Pasar a céntimos de forma segura evitando fallos de flotantes
     const amountInCents = Math.round(amount * 100).toString();
 
-    // 🛠️ MEJORA: Número de pedido seguro de 12 caracteres (CINE + 5 dígitos de tiempo + 3 aleatorios)
+    // Número de pedido seguro de 12 caracteres (CINE + 5 dígitos de tiempo + 3 aleatorios)
     const timePart = Date.now().toString().slice(-5);
     const randomPart = Math.floor(100 + Math.random() * 900).toString(); // Asegura 3 dígitos
     const orderId = `CINE${timePart}${randomPart}`;
@@ -32,14 +32,14 @@ export async function POST(request: Request) {
         })
       ),
       DS_MERCHANT_MERCHANTURL: "https://diademilagros.com/api/tpv-webhook",
-      DS_MERCHANT_URLOK: "https://diademilagros.com", // Recomendado: página de gracias
-      DS_MERCHANT_URLKO: "https://diademilagros.com",  // Recomendado: página de reintento
+      DS_MERCHANT_URLOK: "https://diademilagros.com", 
+      DS_MERCHANT_URLKO: "https://diademilagros.com",  
     };
 
-    // 🛠️ CORRECCIÓN CRÍTICA 1: Redsys requiere codificación 'base64url' para viajar por el navegador
+    // 🛠️ CORRECCIÓN CRÍTICA 1: Redsys requiere Base64 estándar puro (con caracteres '=') para interpretar el formulario web
     const merchantParametersBase64 = Buffer.from(
       JSON.stringify(merchantParams)
-    ).toString("base64url");
+    ).toString("base64");
 
     // Clave secreta del comercio
     const key = Buffer.from(secretKey, "base64");
@@ -60,19 +60,21 @@ export async function POST(request: Request) {
       cipher.final(),
     ]);
 
-    // 🛠️ CORRECCIÓN CRÍTICA 2: El cálculo del HMAC se realiza sobre el string Base64URL, 
-    // pero el resultado final ("signature") enviado a Redsys se codifica en 'base64' estándar o 'base64url' según su API. 
-    // Para entornos web estándar, Redsys acepta base64url directamente.
-    const signature = crypto
+    // 🛠️ CORRECCIÓN CRÍTICA 2: El cálculo del HMAC se realiza sobre el string Base64 generado anteriormente.
+    const signatureBase64 = crypto
       .createHmac("sha256", merchantKey)
       .update(merchantParametersBase64)
-      .digest("base64url");
+      .digest("base64");
+
+    // 🛠️ CORRECCIÓN CRÍTICA 3: Modificar los caracteres especiales a mano para asegurar compatibilidad perfecta por POST en el navegador
+    const signatureUrlSafe = signatureBase64
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_");
 
     return NextResponse.json({
-      // URL de entorno de pruebas. Recuerda cambiarla a la de producción cuando lances la web
       url: "https://sis-t.redsys.es:25443/sis/realizarPago",
       params: merchantParametersBase64,
-      signature,
+      signature: signatureUrlSafe,
       signatureVersion: "HMAC_SHA256_V1",
     });
   } catch (error) {
