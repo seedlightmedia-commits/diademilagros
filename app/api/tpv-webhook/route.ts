@@ -122,20 +122,24 @@ export async function POST(request: Request) {
       // ========================================================
       // 🚀 A PARTIR DE AQUÍ SIGUE TU CÓDIGO DE QR, SHEETS Y RESEND COPIADO IGUAL...
       // ========================================================
-      const numTickets = Number(customerData.tickets) || 1;
+            const numTickets = Number(customerData.tickets) || 1;
       const uniqueCode = `DM-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 
-      // Generar QR
+      // Generar QR en Base64 para el correo
       const qrDataUrl = await QRCode.toDataURL(uniqueCode);
       const qrBase64 = qrDataUrl.replace(/^data:image\/\w+;base64,/, "");
 
-      // 🛠️ CORRECCIÓN CRÍTICA: Sintaxis template string ($) y API de QR real para Google Sheets
+      // 🛠️ REPARACIÓN: Normalizamos el nombre del evento para eliminar caracteres que rompan las peticiones HTTP
+      const eventNameClean = eventName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase(); 
+      // "CINE PARA NIÑOS" se convertirá de forma segura en "CINE PARA NINOS"
+
+      // Payload para Google Sheets
       const registerPayload = {
-        "Nombre del evento": eventName,
+        "Nombre del evento": eventNameClean,
         "Nombre": customerData.name || "Invitado",
         "Contacto": customerData.phone || "",
         "Gmail": customerData.email,
-        "Plazas": numTickets, 
+        "Plazas": numTickets,
         "Código único": uniqueCode,
         "qrFormula": `=IMAGE("https://qrserver.com{uniqueCode}")`
       };
@@ -144,25 +148,34 @@ export async function POST(request: Request) {
       const sheetsUrl = process.env.GOOGLE_SHEETS_CINE_URL;
       if (sheetsUrl) {
         try {
+          console.error("📤 [SHEETS] Intentando enviar payload...");
           const sheetsResponse = await fetch(sheetsUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
             body: JSON.stringify(registerPayload),
           });
-          console.log("📊 Google Sheets status:", sheetsResponse.status);
+          
+          console.error(`📊 [SHEETS] Código de estado HTTP recibido: ${sheetsResponse.status}`);
+          const responseText = await sheetsResponse.text();
+          console.error(`📊 [SHEETS] Respuesta del servidor de Google: ${responseText.slice(0, 150)}`);
+          
         } catch (sheetsError) {
-          console.error("❌ Error enviando a Google Sheets:", sheetsError);
+          console.error("❌ [SHEETS] Error crítico de red conectando con Google Sheets:", sheetsError);
         }
       } else {
-        console.error("⚠️ GOOGLE_SHEETS_CINE_URL no configurada");
+        console.error("⚠️ [SHEETS] ERROR: La variable GOOGLE_SHEETS_CINE_URL no está configurada en Vercel.");
       }
 
-      // Enviar correo
+      // Enviar correo electrónico con Resend
       try {
-        await resend.emails.send({
+        console.error(`📨 [RESEND] Intentando enviar correo a: ${customerData.email}`);
+        const emailResult = await resend.emails.send({
           from: "Día de Milagros <eventos@diademilagros.com>",
           to: customerData.email,
-          subject: `Confirmación de inscripción - ${eventName}`,
+          subject: `Confirmación de inscripción - ${eventNameClean}`,
           attachments: [
             {
               filename: "qr-code.png",
@@ -180,16 +193,15 @@ export async function POST(request: Request) {
                   <table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,0.05);">
                     <tr>
                       <td align="center" bgcolor="#ff7542" style="background:#ff7542;padding:35px;">
-                        <img src="https://diademilagros.com" alt="Día de Milagros" width="240" style="display:block;margin:0 auto 15px auto;height:auto;">
                         <h1 style="color:white;margin:0;font-size:34px;letter-spacing:1px;font-weight:bold;">
-                          ${eventName}
+                          ${eventNameClean}
                         </h1>
                       </td>
                     </tr>
                     <tr>
                       <td style="padding:45px;background:#ffffff;">
                         <h2 style="color:#ff7542;margin-top:0;">¡Hola ${customerData.name}!</h2>
-                        <p style="color:#333;font-size:16px;line-height:1.5;">Tu pago ha sido procesado correctamente. Adjunto encontrarás tu código QR de acceso.</p>
+                        <p style="color:#333;font-size:16px;line-height:1.5;">Tu inscripción se ha procesado con éxito. Presenta el código QR adjunto en la entrada.</p>
                       </td>
                     </tr>
                   </table>
@@ -200,16 +212,18 @@ export async function POST(request: Request) {
           </html>
           `,
         });
-        console.log("📧 Correo enviado con éxito a:", customerData.email);
+        
+        console.error("✅ [RESEND] Correo enviado de forma exitosa. ID:", emailResult);
       } catch (emailError) {
-        console.error("❌ Error enviando correo con Resend:", emailError);
+        console.error("❌ [RESEND] Error crítico enviando el correo:", emailError);
       }
     }
 
-    return new Response("OK", { status: 200 });
+    return new Response("OK", { status: 200 }); 
 
   } catch (globalError) {
-    console.error("❌ Error crítico en el Webhook:", globalError);
-    return new Response("Error interno del servidor", { status: 500 });
+    console.error("❌ [WEBHOOK] Error crítico general del sistema:", globalError);
+    return new Response("Error interno", { status: 500 });
   }
 }
+
