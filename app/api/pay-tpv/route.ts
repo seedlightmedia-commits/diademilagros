@@ -28,7 +28,8 @@ export async function POST(request: Request) {
         eventName,
       }),
 
-      DS_MERCHANT_MERCHANTURL: "https://diademilagros.com",
+      DS_MERCHANT_MERCHANTURL:
+"https://diademilagros.com/api/tpv-webhook",
       DS_MERCHANT_URLOK: "https://diademilagros.com",
       DS_MERCHANT_URLKO: "https://diademilagros.com",
     };

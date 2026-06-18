@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import QRCode from "qrcode";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY!);
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +19,7 @@ export async function POST(request: Request) {
     const orderId = params.Ds_Order || params.DS_MERCHANT_ORDER || "";
     const responseCode = parseInt(params.Ds_Response || "9999");
 
-    // 2. 🔐 VERIFICACIÓN DE SEGURIDAD NATIVA
+    // 2. 🔐 VERIFICACIÓN DE SEGURIDAD NATIVA DEL BANCO
     const keyBuffer = Buffer.from(secretKey, "base64");
     const cipher = crypto.createCipheriv("des-ede3-cbc", keyBuffer, Buffer.alloc(8, 0));
     cipher.setAutoPadding(false);
@@ -34,7 +37,7 @@ export async function POST(request: Request) {
     const signatureNormalized = ds_signature.replace(/_/g, "/").replace(/-/g, "+");
     const localSignatureNormalized = localSignature.replace(/_/g, "/").replace(/-/g, "+");
 
-    // Verificar firmas para impedir registros falsos de personas que no pagaron
+    // Verificar firmas para impedir fraudes o registros falsificados
     if (signatureNormalized.substring(0, 16) !== localSignatureNormalized.substring(0, 16)) {
       return new Response("Firma no autorizada", { status: 401 });
     }
@@ -47,9 +50,14 @@ export async function POST(request: Request) {
 
       // Generación automática del código aleatorio post-pago
       const uniqueCode = "DM-" + Date.now() + "-" + Math.floor(Math.random() * 100000);
+      
+      // Creamos el QR en Base64 para guardarlo en la base de datos
       const qrImageBase64 = await QRCode.toDataURL(uniqueCode);
+      
+      // Procesamos la copia limpia del Base64 sin prefijos para el adjunto de Resend
+      const base64CleanData = qrImageBase64.replace(/^data:image\/\w+;base64,/, "");
 
-      // Enviar datos limpios a tu /api/register actual (Sheets + Correo con Resend)
+      // Estructuramos el payload idéntico para la hoja de cálculo
       const registerPayload = {
         eventName,
         name: customerData.name,
@@ -59,18 +67,69 @@ export async function POST(request: Request) {
         qrImage: qrImageBase64
       };
 
-      await fetch("https://diademilagros.com", {
+      // 🚀 ENVIAR DIRECTAMENTE A TU NUEVA HOJA EXCEL DE CINE
+      await fetch(process.env.GOOGLE_SHEETS_CINE_URL!, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(registerPayload),
       });
+
+      // 📧 ENVIAR CORREO DE CONFIRMACIÓN CON RESEND EXCLUSIVO PARA EL CINE
+      await resend.emails.send({
+        from: "Día de Milagros <eventos@diademilagros.com>",
+        to: customerData.email,
+        subject: `Confirmación de inscripción - ${eventName}`,
+        attachments: [
+          {
+            filename: 'qr-code.png',
+            content: Buffer.from(base64CleanData, 'base64'),
+            contentType: 'image/png',
+            contentId: 'qr-code-inline',
+          }
+        ],
+        html: `
+        <html>
+        <body style="margin:0;background:#f5f5f5;font-family:Arial,sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td align="center">
+                <table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:18px;overflow:hidden;">
+                  <tr>
+                    <td align="center" style="background:#ff7542;padding:40px;">
+                      <img src="https://diademilagros.com" width="240" style="display:block;margin:auto;">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:45px;">
+                      <h2 style="color:#ff7542;">¡Hola ${customerData.name}!</h2>
+                      <p>Tu pago ha sido procesado de forma correcta y tu inscripción está confirmada.</p>
+                      <p><strong>Evento:</strong><br>${eventName}</p>
+                      <p><strong>Código único de acceso:</strong><br>${uniqueCode}</p>
+                      <br>
+                      <div style="text-align:center;">
+                        <img src="cid:qr-code-inline" width="240" alt="Código QR" style="display:block;margin:auto;">
+                      </div>
+                      <br>
+                      <p style="text-align:center;">Presenta este código QR en la entrada de la iglesia.</p>
+                      <hr>
+                      <p style="text-align:center;color:#777;">Ministerio Barcelona</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+        `,
+      });
     }
 
     return new Response("OK", { status: 200 });
   } catch (error) {
-    console.error("Error en webhook nativo de Redsys:", error);
+    console.error("Error en webhook de Redsys:", error);
     return new Response("Error interno", { status: 500 });
   }
 }
