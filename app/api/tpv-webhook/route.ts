@@ -65,57 +65,58 @@ export async function POST(request: Request) {
 
     console.log("🔒 Firma válida. Pedido:", orderId);
 
-        // 3. Solo procesar pagos aprobados (códigos 0-99)
+       // 3. Solo procesar pagos aprobados (códigos 0-99)
     if (responseCode >= 0 && responseCode <= 99) {
-      // 🛠️ CORRECCIÓN: Intentar leer tanto en minúsculas como en mayúsculas por seguridad
+      
+      // Buscamos el parámetro sin importar si está en mayúsculas o minúsculas
       const merchantDataRaw = normalizedParams.ds_merchantdata || params.Ds_MerchantData || "";
 
-      console.log("📦 merchantData raw recibido:", merchantDataRaw);
+      console.log("📦 merchantData raw detectado:", merchantDataRaw);
 
       let customerData = { name: "Invitado", email: "", phone: "", tickets: 1 };
       let eventName = "CINE PARA NIÑOS";
 
-       if (merchantDataRaw) {
+      if (merchantDataRaw) {
         try {
-          // Restaurar caracteres estándar de Base64
           const sanitized = merchantDataRaw.replace(/-/g, "+").replace(/_/g, "/");
           const padded = sanitized + "=".repeat((4 - (sanitized.length % 4)) % 4);
           const decoded = Buffer.from(padded, "base64").toString("utf-8");
 
-          console.log("📦 merchantData decodificado:", decoded);
+          console.log("📦 merchantData decodificado a string:", decoded);
 
-          if (decoded.trim().startsWith("{")) {
-            const parsed = JSON.parse(decoded);
-            
-            // 🛠️ LA CLAVE: Forzar la extracción correcta respetando la estructura que envías en el Formulario
-            if (parsed.customerData) {
-              customerData = {
-                name: parsed.customerData.name || "Invitado",
-                email: parsed.customerData.email || "",
-                phone: parsed.customerData.phone || "",
-                tickets: Number(parsed.customerData.tickets) || 1
-              };
-            }
-            if (parsed.eventName) {
-              eventName = parsed.eventName;
-            }
+          // Convertimos a JSON el string original puro sin alteración de minúsculas
+          const parsed = JSON.parse(decoded);
+          
+          // 🛠️ EXTRAEMOS LOS DATOS: Buscamos de forma flexible en cualquier variante de nombre
+          const cData = parsed.customerData || parsed.customerdata;
+          
+          if (cData) {
+            customerData = {
+              name: cData.name || cData.Name || "Invitado",
+              email: cData.email || cData.Email || "",
+              phone: cData.phone || cData.Phone || "",
+              tickets: Number(cData.tickets || cData.Tickets) || 1
+            };
           }
+          
+          eventName = parsed.eventName || parsed.eventname || eventName;
 
-          console.log("✅ customerData OK mapeado:", { email: customerData.email, eventName });
+          console.log("✅ Datos del cliente asignados con éxito:", customerData);
 
         } catch (err) {
-          console.error("❌ Error decodificando merchantData:", err);
+          console.error("❌ Error grave decodificando merchantData:", err);
         }
       }
 
-
-      // 🛠️ CAMBIO SEGURO CONTRA CAÍDAS: Si el email falla, registramos el error en logs pero dejamos que Redsys reciba un 200
-      // para que el banco no piense que tu servidor web se ha caído.
-      if (!customerData.email) {
-        console.error("❌ Email vacío — No se puede procesar correos ni Sheets en este intento");
+      // Filtro de seguridad: Si tras la flexibilidad el email sigue vacío, se registra pero no rompe el flujo
+      if (!customerData.email || customerData.email.trim() === "") {
+        console.error("❌ El email se decodificó como vacío. No se puede continuar al Excel ni enviar correo.");
         return new Response("OK", { status: 200 }); 
       }
 
+      // ========================================================
+      // 🚀 A PARTIR DE AQUÍ COMIENZA TU CÓDIGO DEL QR, SHEETS Y RESEND (NO TOCAR)
+      // ========================================================
       const numTickets = Number(customerData.tickets) || 1;
       const uniqueCode = `DM-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 
