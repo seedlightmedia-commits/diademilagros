@@ -13,42 +13,37 @@ export async function POST(request: Request) {
 
     const secretKey = process.env.REDSYS_SECRET_KEY || "";
 
-    // 1. Decodificar parámetros del banco de forma nativa
-    const jsonString = Buffer.from(ds_merchantParameters, "base64").toString("utf-8");
+    // 1. Decodificar parámetros de forma nativa
+    const jsonString = Buffer.from(ds_merchantParameters, "base64url").toString("utf-8");
     const params = JSON.parse(jsonString);
     
-    // Redsys devuelve los parámetros en minúsculas en el Webhook (Ds_Order y Ds_Response)
     const orderId = params.Ds_Order || params.DS_MERCHANT_ORDER || "";
     const responseCode = parseInt(params.Ds_Response || "9999");
 
-    // 2. 🔐 VERIFICACIÓN DE SEGURIDAD SINCRONIZADA A 16 BYTES
+    // 2. 🔐 VERIFICACIÓN DE SEGURIDAD SEGÚN PROTOCOLO OFICIAL REDSYS
     const keyBuffer = Buffer.from(secretKey, "base64");
     
-    // Inicializar el descifrador idéntico a tu archivo pay-tpv
     const cipher = crypto.createCipheriv("des-ede3-cbc", keyBuffer, Buffer.alloc(8, 0));
     cipher.setAutoPadding(false);
     
-    // 🛠️ Mantiene tus 16 bytes exactos para acoplarse a tu lógica de pay-tpv
     const orderBuffer = Buffer.alloc(16, 0);
     orderBuffer.write(orderId);
     
     const merchantKey = Buffer.concat([cipher.update(orderBuffer), cipher.final()]);
     
-    // 🛠️ CORRECCIÓN CRÍTICA: Cambiado a .digest("base64url") para igualar el protocolo del Webhook de Redsys
     const localSignature = crypto
       .createHmac("sha256", merchantKey)
       .update(ds_merchantParameters)
-      .digest("base64url"); 
+      .digest("base64"); 
 
-    // Normalizar caracteres especiales para asegurar compatibilidad perfecta de bloques binarios
-    const signatureNormalized = ds_signature.replace(/_/g, "/").replace(/-/g, "+").replace(/=/g, "");
-    const localSignatureNormalized = localSignature.replace(/_/g, "/").replace(/-/g, "+").replace(/=/g, "");
+    const signatureNormalized = ds_signature.replace(/-/g, "+").replace(/_/g, "/");
 
-    // Validar coincidencia exacta de firmas binarias
-    if (signatureNormalized.substring(0, 16) !== localSignatureNormalized.substring(0, 16)) {
+    if (signatureNormalized !== localSignature) {
       console.error("❌ Webhook denegado: Las firmas criptográficas no coinciden.");
       return new Response("Firma no autorizada", { status: 401 });
     }
+
+    console.log("🔒 Firma válida. Procesando pasarela de pago...");
 
     // 3. Si el pago fue aprobado correctamente por el banco (Códigos 0000 a 0099)
     if (responseCode >= 0 && responseCode <= 99) {
@@ -56,35 +51,40 @@ export async function POST(request: Request) {
       const merchantData = JSON.parse(decodeURIComponent(merchantDataRaw));
       const { customerData, eventName } = merchantData;
 
-      // Generación automática del código aleatorio post-pago
+      // Extracción del número de entradas compradas
+      const numTickets = customerData.tickets || 1;
+
+      // Generación del código aleatorio post-pago
       const uniqueCode = "DM-" + Date.now() + "-" + Math.floor(Math.random() * 100000);
       
-      // Creamos el QR en Base64 para enviarlo a la base de datos
+      // Creamos el QR en Base64 para adjuntarlo como archivo real en Resend
       const qrImageBase64 = await QRCode.toDataURL(uniqueCode);
-      
-      // Procesamos la copia limpia del Base64 sin prefijos para el adjunto de Resend
       const base64CleanData = qrImageBase64.replace(/^data:image\/\w+;base64,/, "");
 
-      // Estructuramos el payload idéntico para la hoja de cálculo
+      // Estructuramos el payload para la hoja de cálculo de Google
       const registerPayload = {
         eventName,
         name: customerData.name,
         phone: customerData.phone,
         email: customerData.email,
-        uniqueCode,
-        qrImage: qrImageBase64
+        tickets: numTickets,
+        uniqueCode
       };
 
-      // 🚀 ENVIAR DIRECTAMENTE A TU NUEVA HOJA EXCEL DE CINE
-      await fetch(process.env.GOOGLE_SHEETS_CINE_URL!, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(registerPayload),
-      });
+      // 🚀 ENVIAR AL EXCEL EXCLUSIVO DE CINE
+      if (process.env.GOOGLE_SHEETS_CINE_URL) {
+        await fetch(process.env.GOOGLE_SHEETS_CINE_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(registerPayload),
+        });
+      } else {
+        console.error("⚠️ Error: GOOGLE_SHEETS_CINE_URL no está definida.");
+      }
 
-      // 📧 ENVIAR CORREO DE CONFIRMACIÓN CON RESEND EXCLUSIVO PARA EL CINE
+      // 📧 ENVIAR CORREO CON DISEÑO INSTITUCIONAL DE DÍA DE MILAGROS ADAPTADO AL CINE
       await resend.emails.send({
         from: "Día de Milagros <eventos@diademilagros.com>",
         to: customerData.email,
@@ -100,29 +100,35 @@ export async function POST(request: Request) {
         html: `
         <html>
         <body style="margin:0;background:#f5f5f5;font-family:Arial,sans-serif;">
-          <table width="100%" cellpadding="0" cellspacing="0">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:20px 0;">
             <tr>
               <td align="center">
-                <table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:18px;overflow:hidden;">
+                <table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,0.05);">
                   <tr>
-                    <td align="center" style="background:#ff7542;padding:40px;">
-                      <img src="https://diademilagros.com" width="240" style="display:block;margin:auto;">
+                    <td align="center" bgcolor="#ff7542" style="background:#ff7542;padding:35px;">
+                      <img src="https://diademilagros.com" alt="Día de Milagros" width="240" style="display:block;margin:0 auto 15px auto;height:auto;">
+                      <h1 style="color:white;margin:0;font-size:34px;letter-spacing:1px;font-weight:bold;">
+                        CINE PARA NIÑOS
+                      </h1>
                     </td>
                   </tr>
                   <tr>
-                    <td style="padding:45px;">
-                      <h2 style="color:#ff7542;">¡Hola ${customerData.name}!</h2>
-                      <p>Tu pago ha sido procesado de forma correcta y tu inscripción está confirmada.</p>
-                      <p><strong>Evento:</strong><br>${eventName}</p>
-                      <p><strong>Código único de acceso:</strong><br>${uniqueCode}</p>
+                    <td style="padding:45px;background:#ffffff;">
+                      <h2 style="color:#ff7542;margin-top:0;">¡Hola ${customerData.name}!</h2>
+                      <p style="color:#333;font-size:16px;line-height:1.5;">Tu pago ha sido procesado de forma correcta y tu inscripción al cine está confirmada.</p>
                       <br>
-                      <div style="text-align:center;">
+                      <p style="font-size:15px;color:#444;margin:5px 0;"><b>Evento:</b> ${eventName}</p>
+                      <p style="font-size:15px;color:#444;margin:5px 0;"><b>Entradas reservadas:</b> ${numTickets} plaza(s)</p>
+                      <p style="font-size:15px;color:#444;margin:5px 0;"><b>Código único de acceso:</b> <code>${uniqueCode}</code></p>
+                      <br>
+                      <div align="center" style="margin:20px 0;">
                         <img src="cid:qr-code-inline" width="240" alt="Código QR" style="display:block;margin:auto;">
                       </div>
                       <br>
-                      <p style="text-align:center;">Presenta este código QR en la entrada de la iglesia.</p>
-                      <hr>
-                      <p style="text-align:center;color:#777;">Ministerio Barcelona</p>
+                      <p align="center" style="font-size:15px;color:#222;font-weight:bold;">Presenta este código QR en la entrada de la iglesia.<br>Válido para acceder con las ${numTickets} personas inscritas.</p>
+                      <br>
+                      <hr style="border:none;border-top:1px solid #eee;">
+                      <p align="center" style="color:#777;font-size:13px;margin-bottom:0;">City Church Barcelona</p>
                     </td>
                   </tr>
                 </table>
