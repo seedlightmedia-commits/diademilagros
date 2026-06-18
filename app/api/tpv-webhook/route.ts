@@ -198,7 +198,7 @@ export async function POST(request: Request) {
                     <tr>
                       <td align="center" bgcolor="#ff7542" style="background:#ff7542;padding:40px 35px;">
                         <!-- LOGO PRINCIPAL CENTRADO EN LA CABECERA -->
-                        <img src="https://diademilagros.com" alt="Día de Milagros" width="260" style="display:block;margin:0 auto 20px auto;border:0;height:auto;max-width:100%;">
+                        <img src="https://diademilagros.com/LOGOS_PRINCIPAL.png" alt="Día de Milagros" width="260" style="display:block;margin:0 auto 20px auto;border:0;height:auto;max-width:100%;">
                         <h1 style="color:white;margin:0;font-size:32px;letter-spacing:1px;font-weight:bold;text-transform:uppercase;">
                           ${eventNameClean}
                         </h1>

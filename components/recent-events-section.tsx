@@ -12,17 +12,17 @@ const recentEvents = [
   {
     id: 1,
     title: "¡FELICIDADES POR TU GRADUACIÓN!",
-    videoUrl: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/VideoGRaduaici%C3%B3nLideres-DrfK5FZCqBgX8c3NCqgsGpSKFWuR65.mp4",
+    videoUrl: "1testimonio.mp4",
   },
   {
     id: 2,
     title: "Testimonios de transformación",
-    videoUrl: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/anuncio%20tres%20servicios-Yf6JlfpLhgY5f8Tn7J6MKvUUEkZWBr.mp4",
+    videoUrl: "testimonios.mp4",
   },
   {
     id: 3,
     title: "Universidad de la Vida",
-    videoUrl: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ANUNCIO%20UNIVERSIDAD%20DE%20LA%20VIDA%283%29-tpy3vn0Jh6WKqATlHfThYa01JHvOiM.mp4",
+    videoUrl: "testimonio3.mp4",
   },
 ];
 
