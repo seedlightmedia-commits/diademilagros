@@ -67,43 +67,43 @@ export async function POST(request: Request) {
 
     // 3. Solo procesar pagos aprobados (códigos 0-99)
     if (responseCode >= 0 && responseCode <= 99) {
-      
+
       const merchantDataRaw = normalizedParams.ds_merchantdata || params.Ds_MerchantData || "";
       console.error("📦 [DIAGNÓSTICO] Ds_MerchantData en bruto recibido:", merchantDataRaw);
 
       let customerData = { name: "Invitado", email: "", phone: "", tickets: 1 };
       let eventName = "CINE PARA NIÑOS";
 
+      // ── Declarar cData fuera del try para que sea accesible en el bloque de Sheets ──
+      let cData: any = null;
+
       if (merchantDataRaw) {
         try {
-          // Limpieza estándar de caracteres URL y rellenado de Base64
           const sanitized = merchantDataRaw.replace(/-/g, "+").replace(/_/g, "/");
           const padded = sanitized + "=".repeat((4 - (sanitized.length % 4)) % 4);
-          
-          // Decodificar a texto plano
+
           let decoded = Buffer.from(padded, "base64").toString("utf-8");
           console.error("📦 [DIAGNÓSTICO] Texto decodificado crudo:", decoded);
 
-          // Reparación de caracteres basura agregados por Redsys al final del JSON
           const lastCurlyBrace = decoded.lastIndexOf("}");
           if (lastCurlyBrace !== -1) {
             decoded = decoded.substring(0, lastCurlyBrace + 1);
           }
 
-          // Parsear el JSON limpio
           const parsed = JSON.parse(decoded);
-          
-          // Extraer los datos flexibles
-          const cData = parsed.customerData || parsed.customerdata;
+
+          // ── Guardar cData en el scope externo ──
+          cData = parsed.customerData || parsed.customerdata;
+
           if (cData) {
             customerData = {
-              name: cData.name || cData.Name || "Invitado",
-              email: cData.email || cData.Email || "",
-              phone: cData.phone || cData.Phone || "",
-              tickets: Number(cData.tickets || cData.Tickets) || 1
+              name:    cData.name    || cData.Name    || "Invitado",
+              email:   cData.email   || cData.Email   || "",
+              phone:   cData.phone   || cData.Phone   || "",
+              tickets: Number(cData.tickets || cData.Tickets) || 1,
             };
           }
-          
+
           eventName = parsed.eventName || parsed.eventname || eventName;
           console.error("✅ Datos del cliente asignados con éxito:", customerData);
 
@@ -115,42 +115,44 @@ export async function POST(request: Request) {
       // Filtro de seguridad
       if (!customerData.email || customerData.email.trim() === "") {
         console.error("❌ El email se decodificó como vacío. No se puede continuar al Excel ni enviar correo.");
-        return new Response("OK", { status: 200 }); 
+        return new Response("OK", { status: 200 });
       }
 
       const numTickets = Number(customerData.tickets) || 1;
       const uniqueCode = `DM-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 
-      // Generar QR en Base64 para el correo
       const qrDataUrl = await QRCode.toDataURL(uniqueCode);
       const qrBase64 = qrDataUrl.replace(/^data:image\/\w+;base64,/, "");
 
-      // Normalizar texto para la red de Google
-      const eventNameClean = eventName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase(); 
+      const eventNameClean = eventName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
 
       // ========================================================
-      // 📊 ENVÍO OPTIMIZADO A GOOGLE SHEETS (Claves Técnicas Limpias)
+      // 📊 ENVÍO A GOOGLE SHEETS
       // ========================================================
       const sheetsUrl = process.env.GOOGLE_SHEETS_CINE_URL;
       if (sheetsUrl) {
         try {
           console.error("📤 [SHEETS] Transformando payload a formato seguro...");
-          
+
           const formBody = new URLSearchParams();
-          formBody.append("eventName", eventNameClean);
-          formBody.append("name", customerData.name || "Invitado");
-          formBody.append("email", customerData.email || "");
-          formBody.append("phone", customerData.phone || "");
-          formBody.append("uniqueCode", uniqueCode);
-          formBody.append("qrFormula", `=IMAGE("https://qrserver.com{uniqueCode}")`);
+          formBody.append("eventName",   eventNameClean);
+          formBody.append("name",        customerData.name  || "Invitado");
+          formBody.append("email",       customerData.email || "");
+          formBody.append("phone",       customerData.phone || "");
+          formBody.append("uniqueCode",  uniqueCode);
+          formBody.append("qrFormula",   `=IMAGE("https://api.qrserver.com/v1/create-qr-code/?data=${uniqueCode}")`);
+          // ── Campos nuevos de Cine para Niños ──
+          formBody.append("childAge",    cData?.childAge    || "");
+          formBody.append("fatherName",  cData?.fatherName  || "");
+          formBody.append("motherName",  cData?.motherName  || "");
+          formBody.append("fatherPhone", cData?.fatherPhone || "");
+          formBody.append("motherPhone", cData?.motherPhone || "");
 
           console.error("📤 [SHEETS] Enviando petición POST...");
-          
+
           fetch(sheetsUrl, {
             method: "POST",
-            headers: { 
-              "Content-Type": "application/x-www-form-urlencoded"
-            },
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: formBody.toString(),
           })
           .then(async (res) => {
@@ -168,12 +170,11 @@ export async function POST(request: Request) {
       }
 
       // ========================================================
-      // 📨 ENVÍO DE CORREO ELECTRÓNICO (Resend + Logo + Anti-colapso)
+      // 📨 ENVÍO DE CORREO ELECTRÓNICO
       // ========================================================
       try {
         console.error(`📨 [RESEND] Intentando enviar correo a: ${customerData.email}`);
-        
-        // Identificador dinámico exclusivo para que Gmail no agrupe los correos en un mismo hilo
+
         const antiCollapseId = `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
         const emailResult = await resend.emails.send({
@@ -197,7 +198,6 @@ export async function POST(request: Request) {
                   <table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,0.05);">
                     <tr>
                       <td align="center" bgcolor="#ff7542" style="background:#ff7542;padding:40px 35px;">
-                        <!-- LOGO PRINCIPAL CENTRADO EN LA CABECERA -->
                         <img src="https://diademilagros.com/LOGOS_PRINCIPAL.png" alt="Día de Milagros" width="260" style="display:block;margin:0 auto 20px auto;border:0;height:auto;max-width:100%;">
                         <h1 style="color:white;margin:0;font-size:32px;letter-spacing:1px;font-weight:bold;text-transform:uppercase;">
                           ${eventNameClean}
@@ -208,8 +208,6 @@ export async function POST(request: Request) {
                       <td style="padding:45px;background:#ffffff;">
                         <h2 style="color:#ff7542;margin-top:0;font-size:24px;">¡Hola ${customerData.name}!</h2>
                         <p style="color:#333333;font-size:16px;line-height:1.6;margin-bottom:25px;">Tu inscripción se ha procesado con éxito. Presenta el código QR adjunto en la entrada el día del evento.</p>
-                        
-                        <!-- IMAGEN DEL QR INCRUSTADA DIRECTAMENTE EN EL CUERPO -->
                         <div style="text-align:center;margin:30px 0;padding:20px;background:#fdfdfd;border:1px dashed #dddddd;border-radius:12px;">
                           <img src="cid:qr-code-inline" alt="Código de acceso QR" width="180" style="display:inline-block;border:0;height:auto;">
                           <p style="color:#666666;font-size:12px;margin:10px 0 0 0;font-family:monospace;">Código: ${uniqueCode}</p>
@@ -219,7 +217,6 @@ export async function POST(request: Request) {
                     <tr>
                       <td bgcolor="#fafafa" style="padding:20px;text-align:center;border-top:1px solid #eeeeee;">
                         <p style="color:#999999;font-size:12px;margin:0;">Día de Milagros &copy; 2026</p>
-                        <!-- Texto invisible anti-agrupamiento de Gmail -->
                         <span style="display:none;white-space:nowrap;font-size:1px;line-height:1px;color:#fafafa;">Ref: ${antiCollapseId}</span>
                       </td>
                     </tr>
@@ -229,20 +226,19 @@ export async function POST(request: Request) {
             </table>
           </body>
           </html>
-          `, // 🔑 AQUÍ SE CIERRA CORRECTAMENTE EL TEMPLATE STRING CON COMILLA INVERTIDA
+          `,
         });
-        
+
         console.error("✅ [RESEND] Correo enviado de forma exitosa. ID:", emailResult);
       } catch (emailError) {
         console.error("❌ [RESEND] Error crítico enviando el correo:", emailError);
       }
     }
 
-    return new Response("OK", { status: 200 }); 
+    return new Response("OK", { status: 200 });
 
   } catch (globalError) {
     console.error("❌ [WEBHOOK] Error crítico general del sistema:", globalError);
     return new Response("Error interno", { status: 500 });
   }
 }
-
