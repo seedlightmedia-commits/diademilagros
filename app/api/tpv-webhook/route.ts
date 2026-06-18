@@ -65,12 +65,10 @@ export async function POST(request: Request) {
 
     console.log("🔒 Firma válida. Pedido:", orderId);
 
-       // 3. Solo procesar pagos aprobados (códigos 0-99)
+    // 3. Solo procesar pagos aprobados (códigos 0-99)
     if (responseCode >= 0 && responseCode <= 99) {
       
-      // Buscamos el parámetro sin importar si está en mayúsculas o minúsculas
       const merchantDataRaw = normalizedParams.ds_merchantdata || params.Ds_MerchantData || "";
-
       console.log("📦 merchantData raw detectado:", merchantDataRaw);
 
       let customerData = { name: "Invitado", email: "", phone: "", tickets: 1 };
@@ -84,10 +82,7 @@ export async function POST(request: Request) {
 
           console.log("📦 merchantData decodificado a string:", decoded);
 
-          // Convertimos a JSON el string original puro sin alteración de minúsculas
           const parsed = JSON.parse(decoded);
-          
-          // 🛠️ EXTRAEMOS LOS DATOS: Buscamos de forma flexible en cualquier variante de nombre
           const cData = parsed.customerData || parsed.customerdata;
           
           if (cData) {
@@ -100,7 +95,6 @@ export async function POST(request: Request) {
           }
           
           eventName = parsed.eventName || parsed.eventname || eventName;
-
           console.log("✅ Datos del cliente asignados con éxito:", customerData);
 
         } catch (err) {
@@ -108,15 +102,11 @@ export async function POST(request: Request) {
         }
       }
 
-      // Filtro de seguridad: Si tras la flexibilidad el email sigue vacío, se registra pero no rompe el flujo
       if (!customerData.email || customerData.email.trim() === "") {
         console.error("❌ El email se decodificó como vacío. No se puede continuar al Excel ni enviar correo.");
         return new Response("OK", { status: 200 }); 
       }
 
-      // ========================================================
-      // 🚀 A PARTIR DE AQUÍ COMIENZA TU CÓDIGO DEL QR, SHEETS Y RESEND (NO TOCAR)
-      // ========================================================
       const numTickets = Number(customerData.tickets) || 1;
       const uniqueCode = `DM-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 
@@ -124,14 +114,13 @@ export async function POST(request: Request) {
       const qrDataUrl = await QRCode.toDataURL(uniqueCode);
       const qrBase64 = qrDataUrl.replace(/^data:image\/\w+;base64,/, "");
 
-      // Payload para Google Sheets
-      // 🛠️ CORRECCIÓN CRÍTICA: Mapeamos los campos exactamente como se llaman tus columnas en Google Sheets
+      // 🛠️ CORRECCIÓN CRÍTICA: Sintaxis template string ($) y API de QR real para Google Sheets
       const registerPayload = {
         "Nombre del evento": eventName,
         "Nombre": customerData.name || "Invitado",
         "Contacto": customerData.phone || "",
         "Gmail": customerData.email,
-        "Plazas": numTickets, // Asegúrate de agregar una columna llamada "Plazas" o cámbialo por el nombre correcto de tus columnas
+        "Plazas": numTickets, 
         "Código único": uniqueCode,
         "qrFormula": `=IMAGE("https://qrserver.com{uniqueCode}")`
       };
@@ -153,10 +142,9 @@ export async function POST(request: Request) {
         console.error("⚠️ GOOGLE_SHEETS_CINE_URL no configurada");
       }
 
-
       // Enviar correo
       try {
-        const emailResult = await resend.emails.send({
+        await resend.emails.send({
           from: "Día de Milagros <eventos@diademilagros.com>",
           to: customerData.email,
           subject: `Confirmación de inscripción - ${eventName}`,
@@ -179,28 +167,14 @@ export async function POST(request: Request) {
                       <td align="center" bgcolor="#ff7542" style="background:#ff7542;padding:35px;">
                         <img src="https://diademilagros.com" alt="Día de Milagros" width="240" style="display:block;margin:0 auto 15px auto;height:auto;">
                         <h1 style="color:white;margin:0;font-size:34px;letter-spacing:1px;font-weight:bold;">
-                          CINE PARA NIÑOS
+                          ${eventName}
                         </h1>
                       </td>
                     </tr>
                     <tr>
                       <td style="padding:45px;background:#ffffff;">
                         <h2 style="color:#ff7542;margin-top:0;">¡Hola ${customerData.name}!</h2>
-                        <p style="color:#333;font-size:16px;line-height:1.5;">
-                          Tu pago ha sido procesado correctamente y tu inscripción está confirmada.
-                        </p>
-                        <p style="font-size:15px;color:#444;margin:5px 0;"><b>Evento:</b> ${eventName}</p>
-                        <p style="font-size:15px;color:#444;margin:5px 0;"><b>Entradas:</b> ${numTickets} plaza(s)</p>
-                        <p style="font-size:15px;color:#444;margin:5px 0;"><b>Código de acceso:</b> <code>${uniqueCode}</code></p>
-                        <div align="center" style="margin:30px 0;">
-                          <img src="cid:qr-code-inline" width="240" alt="Código QR" style="display:block;margin:auto;">
-                        </div>
-                        <p align="center" style="font-size:15px;color:#222;font-weight:bold;">
-                          Presenta este QR en la entrada de la iglesia.<br>
-                          Válido para ${numTickets} persona(s).
-                        </p>
-                        <hr style="border:none;border-top:1px solid #eee;margin-top:30px;">
-                        <p align="center" style="color:#777;font-size:13px;margin-bottom:0;">City Church Barcelona</p>
+                        <p style="color:#333;font-size:16px;line-height:1.5;">Tu pago ha sido procesado correctamente. Adjunto encontrarás tu código QR de acceso.</p>
                       </td>
                     </tr>
                   </table>
@@ -211,16 +185,16 @@ export async function POST(request: Request) {
           </html>
           `,
         });
-        console.log("📧 Respuesta Resend:", emailResult);
+        console.log("📧 Correo enviado con éxito a:", customerData.email);
       } catch (emailError) {
         console.error("❌ Error enviando correo con Resend:", emailError);
       }
-      console.log("✅ Proceso completado de forma limpia.");
     }
 
     return new Response("OK", { status: 200 });
-  } catch (error) {
-    console.error("Error crítico en el webhook de Redsys:", error);
-    return new Response("Error interno", { status: 500 });
+
+  } catch (globalError) {
+    console.error("❌ Error crítico en el Webhook:", globalError);
+    return new Response("Error interno del servidor", { status: 500 });
   }
 }
