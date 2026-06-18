@@ -125,13 +125,15 @@ export async function POST(request: Request) {
       const qrBase64 = qrDataUrl.replace(/^data:image\/\w+;base64,/, "");
 
       // Payload para Google Sheets
+      // 🛠️ CORRECCIÓN CRÍTICA: Mapeamos los campos exactamente como se llaman tus columnas en Google Sheets
       const registerPayload = {
-        eventName,
-        name: customerData.name || "Invitado",
-        phone: customerData.phone || "",
-        email: customerData.email,
-        tickets: numTickets,
-        uniqueCode,
+        "Nombre del evento": eventName,
+        "Nombre": customerData.name || "Invitado",
+        "Contacto": customerData.phone || "",
+        "Gmail": customerData.email,
+        "Plazas": numTickets, // Asegúrate de agregar una columna llamada "Plazas" o cámbialo por el nombre correcto de tus columnas
+        "Código único": uniqueCode,
+        "qrFormula": `=IMAGE("https://qrserver.com{uniqueCode}")`
       };
 
       // Enviar a Google Sheets
@@ -150,6 +152,7 @@ export async function POST(request: Request) {
       } else {
         console.error("⚠️ GOOGLE_SHEETS_CINE_URL no configurada");
       }
+
 
       // Enviar correo
       try {
