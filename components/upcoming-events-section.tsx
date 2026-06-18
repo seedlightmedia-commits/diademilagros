@@ -119,7 +119,6 @@ export function UpcomingEventsSection() {
             email: formData.email,
             uniqueCode,
             qrImage,
-            // Campos extra Día de Milagros
             age: formData.age,
             metro: formData.metro,
             nationality: formData.nationality,
@@ -292,323 +291,330 @@ export function UpcomingEventsSection() {
 
       {/* Registration Modal */}
       <Dialog open={!!selectedEvent} onOpenChange={closeDialog}>
-       <DialogContent className="sm:max-w-md bg-white p-0 gap-0 max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="sm:max-w-md bg-white p-0 gap-0 max-h-[90vh] overflow-hidden flex flex-col">
+
+          {/* Header fijo */}
           <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
             <DialogTitle className="text-primary font-bold text-center">
               {registrationComplete ? "¡Registro Exitoso!" : `Registro - ${selectedEvent?.title}`}
             </DialogTitle>
           </DialogHeader>
 
-<div className="overflow-y-auto flex-1 px-6 pb-6" style={{ overflowY: "scroll" }}></div>
-          {registrationComplete ? (
-            <div className="text-center py-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <p className="text-gray-600 mb-2">
-                {selectedEvent?.isFree
-                  ? "Tu entrada ha sido registrada exitosamente."
-                  : "Tu pago ha sido procesado. Recibirás tu código QR por email."}
-              </p>
-              {selectedEvent?.isFree && formData.email && (
-                <p className="text-xs text-gray-500">
-                  Se ha enviado un código QR a {formData.email}
+          {/* Cuerpo con scroll */}
+          <div className="overflow-y-auto flex-1 px-6 pb-6" style={{ overflowY: "scroll" }}>
+
+            {registrationComplete ? (
+              <div className="text-center py-6">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <p className="text-gray-600 mb-2">
+                  {selectedEvent?.isFree
+                    ? "Tu entrada ha sido registrada exitosamente."
+                    : "Tu pago ha sido procesado. Recibirás tu código QR por email."}
                 </p>
-              )}
-              <Button className="mt-4 bg-primary hover:bg-primary/90" onClick={closeDialog}>
-                Cerrar
-              </Button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-
-              {/* ── Campos comunes ── */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre completo *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                />
+                {selectedEvent?.isFree && formData.email && (
+                  <p className="text-xs text-gray-500">
+                    Se ha enviado un código QR a {formData.email}
+                  </p>
+                )}
+                <Button className="mt-4 bg-primary hover:bg-primary/90" onClick={closeDialog}>
+                  Cerrar
+                </Button>
               </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4 pt-2">
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Teléfono *
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                  placeholder="+34 612 345 678"
-                />
-              </div>
+                {/* ── Campos comunes ── */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre completo *
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email {selectedEvent?.isFree ? "(opcional)" : "*"}
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                  placeholder="tu@email.com"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Teléfono *
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                    placeholder="+34 612 345 678"
+                  />
+                </div>
 
-              {/* ── Campos exclusivos: Día de Milagros ── */}
-              {selectedEvent?.id === 1 && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Edad *
-                    </label>
-                    <input
-                      type="number"
-                      name="age"
-                      value={formData.age}
-                      onChange={handleInputChange}
-                      min={1}
-                      max={120}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                      placeholder="Ej: 35"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email {selectedEvent?.isFree ? "(opcional)" : "*"}
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                    placeholder="tu@email.com"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Metro más cercano a tu domicilio *
-                    </label>
-                    <input
-                      type="text"
-                      name="metro"
-                      value={formData.metro}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                      placeholder="Ej: Sagrada Família"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nacionalidad *
-                    </label>
-                    <input
-                      type="text"
-                      name="nationality"
-                      value={formData.nationality}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                      placeholder="Ej: Española, Colombiana..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nombre de quien te invitó *
-                    </label>
-                    <input
-                      type="text"
-                      name="invitedBy"
-                      value={formData.invitedBy}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                      placeholder="Nombre completo"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ¿Cómo nos conociste? *
-                    </label>
-                    <select
-                      name="howDidYouMeetUs"
-                      value={formData.howDidYouMeetUs}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm bg-white"
-                    >
-                      <option value="">Selecciona una opción</option>
-                      <option value="Redes sociales">Redes sociales</option>
-                      <option value="Un amigo">Un amigo</option>
-                      <option value="Familiar">Familiar</option>
-                      <option value="Internet">Internet</option>
-                      <option value="Flyer / Cartel">Flyer / Cartel</option>
-                      <option value="Otro">Otro</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Grupo al que asistes *
-                    </label>
-                    <input
-                      type="text"
-                      name="attendanceGroup"
-                      value={formData.attendanceGroup}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                      placeholder="Nombre del grupo"
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* ── Campos exclusivos: Cine para Niños ── */}
-              {selectedEvent?.id === 2 && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Edad del niño/a *
-                    </label>
-                    <input
-                      type="number"
-                      name="childAge"
-                      value={formData.childAge}
-                      onChange={handleInputChange}
-                      min={2}
-                      max={18}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                      placeholder="Ej: 7"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nombre del padre *
-                    </label>
-                    <input
-                      type="text"
-                      name="fatherName"
-                      value={formData.fatherName}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                      placeholder="Nombre completo"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nombre de la madre *
-                    </label>
-                    <input
-                      type="text"
-                      name="motherName"
-                      value={formData.motherName}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                      placeholder="Nombre completo"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Teléfono del padre *
-                    </label>
-                    <input
-                      type="tel"
-                      name="fatherPhone"
-                      value={formData.fatherPhone}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                      placeholder="+34 612 345 678"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Teléfono de la madre *
-                    </label>
-                    <input
-                      type="tel"
-                      name="motherPhone"
-                      value={formData.motherPhone}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                      placeholder="+34 612 345 678"
-                    />
-                  </div>
-                </>
-              )}
-
-              {/* ── Campos de pago (solo Cine para Niños) ── */}
-              {!selectedEvent?.isFree && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Número de entradas *
-                    </label>
-                    <input
-                      type="number"
-                      name="tickets"
-                      value={formData.tickets}
-                      onChange={handleInputChange}
-                      min={1}
-                      max={10}
-                      required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                    />
-                  </div>
-
-                  <div className="bg-gray-50 p-3 rounded-md">
-                    <div className="flex justify-between text-sm">
-                      <span>Precio por entrada:</span>
-                      <span>{selectedEvent?.price}€</span>
+                {/* ── Campos exclusivos: Día de Milagros ── */}
+                {selectedEvent?.id === 1 && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Edad *
+                      </label>
+                      <input
+                        type="number"
+                        name="age"
+                        value={formData.age}
+                        onChange={handleInputChange}
+                        min={1}
+                        max={120}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                        placeholder="Ej: 35"
+                      />
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Cantidad:</span>
-                      <span>{formData.tickets}</span>
-                    </div>
-                    <div className="flex justify-between font-bold text-primary mt-2 pt-2 border-t">
-                      <span>Total:</span>
-                      <span>{totalPrice}€</span>
-                    </div>
-                  </div>
-                </>
-              )}
 
-              <Button
-                type="submit"
-                className="w-full bg-primary hover:bg-primary/90 text-white"
-                disabled={isSubmitting}
-              >
-                {isSubmitting
-                  ? "Procesando..."
-                  : selectedEvent?.isFree
-                  ? "Registrarme"
-                  : `Pagar ${totalPrice}€`}
-              </Button>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Metro más cercano a tu domicilio *
+                      </label>
+                      <input
+                        type="text"
+                        name="metro"
+                        value={formData.metro}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                        placeholder="Ej: Sagrada Família"
+                      />
+                    </div>
 
-              {!selectedEvent?.isFree && (
-                <p className="text-[10px] text-gray-400 text-center">
-                  Pago seguro procesado por TPV Virtual
-                </p>
-              )}
-            </form>
-          )}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Nacionalidad *
+                      </label>
+                      <input
+                        type="text"
+                        name="nationality"
+                        value={formData.nationality}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                        placeholder="Ej: Española, Colombiana..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Nombre de quien te invitó *
+                      </label>
+                      <input
+                        type="text"
+                        name="invitedBy"
+                        value={formData.invitedBy}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                        placeholder="Nombre completo"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        ¿Cómo nos conociste? *
+                      </label>
+                      <select
+                        name="howDidYouMeetUs"
+                        value={formData.howDidYouMeetUs}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm bg-white"
+                      >
+                        <option value="">Selecciona una opción</option>
+                        <option value="Redes sociales">Redes sociales</option>
+                        <option value="Un amigo">Un amigo</option>
+                        <option value="Familiar">Familiar</option>
+                        <option value="Internet">Internet</option>
+                        <option value="Flyer / Cartel">Flyer / Cartel</option>
+                        <option value="Otro">Otro</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Grupo al que asistes *
+                      </label>
+                      <input
+                        type="text"
+                        name="attendanceGroup"
+                        value={formData.attendanceGroup}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                        placeholder="Nombre del grupo"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* ── Campos exclusivos: Cine para Niños ── */}
+                {selectedEvent?.id === 2 && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Edad del niño/a *
+                      </label>
+                      <input
+                        type="number"
+                        name="childAge"
+                        value={formData.childAge}
+                        onChange={handleInputChange}
+                        min={2}
+                        max={18}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                        placeholder="Ej: 7"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Nombre del padre *
+                      </label>
+                      <input
+                        type="text"
+                        name="fatherName"
+                        value={formData.fatherName}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                        placeholder="Nombre completo"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Nombre de la madre *
+                      </label>
+                      <input
+                        type="text"
+                        name="motherName"
+                        value={formData.motherName}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                        placeholder="Nombre completo"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Teléfono del padre *
+                      </label>
+                      <input
+                        type="tel"
+                        name="fatherPhone"
+                        value={formData.fatherPhone}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                        placeholder="+34 612 345 678"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Teléfono de la madre *
+                      </label>
+                      <input
+                        type="tel"
+                        name="motherPhone"
+                        value={formData.motherPhone}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                        placeholder="+34 612 345 678"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* ── Campos de pago (solo Cine para Niños) ── */}
+                {!selectedEvent?.isFree && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Número de entradas *
+                      </label>
+                      <input
+                        type="number"
+                        name="tickets"
+                        value={formData.tickets}
+                        onChange={handleInputChange}
+                        min={1}
+                        max={10}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      />
+                    </div>
+
+                    <div className="bg-gray-50 p-3 rounded-md">
+                      <div className="flex justify-between text-sm">
+                        <span>Precio por entrada:</span>
+                        <span>{selectedEvent?.price}€</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Cantidad:</span>
+                        <span>{formData.tickets}</span>
+                      </div>
+                      <div className="flex justify-between font-bold text-primary mt-2 pt-2 border-t">
+                        <span>Total:</span>
+                        <span>{totalPrice}€</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full bg-primary hover:bg-primary/90 text-white"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting
+                    ? "Procesando..."
+                    : selectedEvent?.isFree
+                    ? "Registrarme"
+                    : `Pagar ${totalPrice}€`}
+                </Button>
+
+                {!selectedEvent?.isFree && (
+                  <p className="text-[10px] text-gray-400 text-center">
+                    Pago seguro procesado por TPV Virtual
+                  </p>
+                )}
+              </form>
+            )}
+
+          </div>{/* ← cierre del div scroll */}
+
         </DialogContent>
       </Dialog>
     </section>
