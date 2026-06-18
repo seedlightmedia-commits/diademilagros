@@ -31,7 +31,7 @@ const upcomingEvents = [
     time: "17H - 21H",
     location: "Cine Aribau, Calle Aribau 8,  Barcelona Metro L1 L2 Universitat",
     image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Recurso3-R2JDtJacHbQ8U6fet0xIITCAMhjAAt.jpg",
-    note: "Este evento es para toda la familia. Niños desde 2 años.",
+    note: "Edades: 1 año (si camina) hasta 10 años. Película: a confirmar. Precio: a confirmar",
     isFree: false,
     price: 8,
   },
