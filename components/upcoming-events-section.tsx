@@ -292,13 +292,14 @@ export function UpcomingEventsSection() {
 
       {/* Registration Modal */}
       <Dialog open={!!selectedEvent} onOpenChange={closeDialog}>
-       <DialogContent className="sm:max-w-md bg-white max-h-[90vh] flex flex-col">
-          <DialogHeader>
+       <DialogContent className="sm:max-w-md bg-white p-0 gap-0 max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-2 shrink-0">
             <DialogTitle className="text-primary font-bold text-center">
               {registrationComplete ? "¡Registro Exitoso!" : `Registro - ${selectedEvent?.title}`}
             </DialogTitle>
           </DialogHeader>
 
+<div className="overflow-y-auto flex-1 px-6 pb-6" style={{ overflowY: "scroll" }}></div>
           {registrationComplete ? (
             <div className="text-center py-6">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
