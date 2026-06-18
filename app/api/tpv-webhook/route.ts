@@ -17,10 +17,7 @@ export async function POST(request: Request) {
     const secretKey = process.env.REDSYS_SECRET_KEY || "";
 
     // 1. Decodificar parámetros de forma nativa
-    const jsonString = Buffer.from(
-  ds_merchantParameters,
-  "base64"
-).toString("utf8");
+    const jsonString = Buffer.from(ds_merchantParameters, "base64").toString("utf-8");
     const params = JSON.parse(jsonString);
     console.log("Parámetros recibidos:", params);
     
@@ -44,29 +41,42 @@ export async function POST(request: Request) {
       .digest("base64"); 
 
     const signatureNormalized = ds_signature
-  .replace(/-/g, "+")
-  .replace(/_/g, "/")
-  .replace(/=/g, "");
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .replace(/=/g, "");
 
-const localSignatureNormalized = localSignature
-  .replace(/-/g, "+")
-  .replace(/_/g, "/")
-  .replace(/=/g, "");
+    const localSignatureNormalized = localSignature
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .replace(/=/g, "");
 
-console.log("Firma Redsys:", signatureNormalized);
-console.log("Firma calculada:", localSignatureNormalized);
+    console.log("Firma Redsys:", signatureNormalized);
+    console.log("Firma calculada:", localSignatureNormalized);
 
-if (signatureNormalized !== localSignatureNormalized) {
-  console.error("❌ Las firmas no coinciden");
-  return new Response("Firma no autorizada", { status: 401 });
-}
+    if (signatureNormalized !== localSignatureNormalized) {
+      console.error("❌ Las firmas no coinciden");
+      return new Response("Firma no autorizada", { status: 401 });
+    }
 
     console.log("🔒 Firma válida. Procesando pasarela de pago...");
 
     // 3. Si el pago fue aprobado correctamente por el banco (Códigos 0000 a 0099)
     if (responseCode >= 0 && responseCode <= 99) {
       const merchantDataRaw = params.Ds_MerchantData || params.DS_MERCHANT_MERCHANTDATA || "{}";
-      const merchantData = JSON.parse(decodeURIComponent(merchantDataRaw));
+      
+      // 🛠️ CORRECCIÓN CRÍTICA: Intenta decodificar de forma segura sin romper el servidor si viene en formato Base64URL
+      let merchantData;
+      try {
+        if (merchantDataRaw.startsWith("%") || merchantDataRaw.includes("%22")) {
+          merchantData = JSON.parse(decodeURIComponent(merchantDataRaw));
+        } else {
+          merchantData = JSON.parse(Buffer.from(merchantDataRaw, "base64url").toString("utf-8"));
+        }
+      } catch (parseError) {
+        console.warn("⚠️ Mapeo alternativo: Error al decodificar JSON directo, aplicando fallback de URL", parseError);
+        merchantData = JSON.parse(decodeURIComponent(merchantDataRaw));
+      }
+
       const { customerData, eventName } = merchantData;
 
       // Extracción del número de entradas compradas
@@ -92,21 +102,21 @@ if (signatureNormalized !== localSignatureNormalized) {
       // 🚀 ENVIAR AL EXCEL EXCLUSIVO DE CINE
       if (process.env.GOOGLE_SHEETS_CINE_URL) {
         const sheetsResponse = await fetch(
-  process.env.GOOGLE_SHEETS_CINE_URL!,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(registerPayload),
-  }
-);
+          process.env.GOOGLE_SHEETS_CINE_URL!,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(registerPayload),
+          }
+        );
 
-console.log(
-  "Google Sheets:",
-  sheetsResponse.status,
-  await sheetsResponse.text()
-);
+        console.log(
+          "Google Sheets:",
+          sheetsResponse.status,
+          await sheetsResponse.text()
+        );
       } else {
         console.error("⚠️ Error: GOOGLE_SHEETS_CINE_URL no está definida.");
       }
