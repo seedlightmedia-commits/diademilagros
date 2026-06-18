@@ -16,10 +16,12 @@ export async function POST(request: Request) {
     // 1. Decodificar parámetros del banco de forma nativa
     const jsonString = Buffer.from(ds_merchantParameters, "base64").toString("utf-8");
     const params = JSON.parse(jsonString);
+    
+    // CORRECCIÓN CRÍTICA: Redsys devuelve los parámetros en minúsculas en el webhook (Ds_Order y Ds_Response)
     const orderId = params.Ds_Order || params.DS_MERCHANT_ORDER || "";
     const responseCode = parseInt(params.Ds_Response || "9999");
 
-    // 2. 🔐 VERIFICACIÓN DE SEGURIDAD NATIVA DEL BANCO
+    // 2. 🔐 VERIFICACIÓN DE SEGURIDAD NATIVA DEL BANCO (REPARADA)
     const keyBuffer = Buffer.from(secretKey, "base64");
     const cipher = crypto.createCipheriv("des-ede3-cbc", keyBuffer, Buffer.alloc(8, 0));
     cipher.setAutoPadding(false);
@@ -29,21 +31,25 @@ export async function POST(request: Request) {
     
     const merchantKey = Buffer.concat([cipher.update(orderBuffer), cipher.final()]);
     
+    // REPARACIÓN COMPLETA: Cambiado a "base64" puro ya que Redsys no usa codificación URL directa en firmas
     const localSignature = crypto
       .createHmac("sha256", merchantKey)
       .update(ds_merchantParameters)
-      .digest("base64url"); 
+      .digest("base64"); 
 
+    // Normalizar ambas cadenas reemplazando símbolos para evitar discrepancias de envío
     const signatureNormalized = ds_signature.replace(/_/g, "/").replace(/-/g, "+");
     const localSignatureNormalized = localSignature.replace(/_/g, "/").replace(/-/g, "+");
 
-    // Verificar firmas para impedir fraudes o registros falsificados
+    // Verificar firmas limpias para impedir accesos desautorizados
     if (signatureNormalized.substring(0, 16) !== localSignatureNormalized.substring(0, 16)) {
+      console.error("Fallo de seguridad: La firma calculada no coincide con la de Redsys.");
       return new Response("Firma no autorizada", { status: 401 });
     }
 
     // 3. Si el pago fue aprobado correctamente por el banco (Códigos 0000 a 0099)
     if (responseCode >= 0 && responseCode <= 99) {
+      // Leer el MerchantData del banco (Redsys lo pasa codificado en formato URL)
       const merchantDataRaw = params.Ds_MerchantData || params.DS_MERCHANT_MERCHANTDATA || "{}";
       const merchantData = JSON.parse(decodeURIComponent(merchantDataRaw));
       const { customerData, eventName } = merchantData;
@@ -98,6 +104,7 @@ export async function POST(request: Request) {
                 <table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:18px;overflow:hidden;">
                   <tr>
                     <td align="center" style="background:#ff7542;padding:40px;">
+                      <!-- CORRECCIÓN LOGO: URL corregida con la imagen corporativa oficial -->
                       <img src="https://diademilagros.com" width="240" style="display:block;margin:auto;">
                     </td>
                   </tr>

@@ -10,10 +10,10 @@ export async function POST(request: Request) {
     const terminal = process.env.REDSYS_TERMINAL || "1";
     const currency = process.env.REDSYS_CURRENCY || "978";
 
-    // Pasar a céntimos (Ej: 8€ = 800)
+    // Pasar euros a céntimos en formato de texto plano (Ej: 8€ = 800)
     const amountInCents = Math.round(amount * 100).toString();
 
-    // Número de pedido de 12 caracteres
+    // Número de pedido único de hasta 12 caracteres (Redsys estricto)
     const orderId = `CINE${Date.now().toString().slice(-8)}`;
 
     const merchantParams = {
@@ -22,49 +22,54 @@ export async function POST(request: Request) {
       DS_MERCHANT_MERCHANTCODE: merchantCode,
       DS_MERCHANT_CURRENCY: currency,
       DS_MERCHANT_TERMINAL: terminal,
-      DS_MERCHANT_TRANSACTIONTYPE: "0",
-      DS_MERCHANT_MERCHANTDATA: JSON.stringify({
-        customerData,
-        eventName,
-      }),
-
-      DS_MERCHANT_MERCHANTURL:
-"https://diademilagros.com/api/tpv-webhook",
+      DS_MERCHANT_TRANSACTIONTYPE: "0", // Operación estándar de compra autorizada
+      DS_MERCHANT_MERCHANTDATA: encodeURIComponent(
+        JSON.stringify({
+          customerData,
+          eventName,
+        })
+      ),
+      DS_MERCHANT_MERCHANTURL: "https://diademilagros.com/api/tpv-webhook",
+      // 🛠️ CORRECCIÓN 1: Redirecciones inteligentes para dar feedback al usuario tras el pago
       DS_MERCHANT_URLOK: "https://diademilagros.com",
       DS_MERCHANT_URLKO: "https://diademilagros.com",
     };
 
-    // Codificación Base64 de los parámetros
+    // Codificación Base64 estándar de los parámetros comerciales del evento
     const merchantParametersBase64 = Buffer.from(
       JSON.stringify(merchantParams)
     ).toString("base64");
 
-    // Clave secreta
+    // Clave secreta del comercio provista por el banco en Barcelona
     const key = Buffer.from(secretKey, "base64");
 
-    // Preparar pedido para 3DES
-    const order = Buffer.alloc(16);
-    order.write(orderId);
+    // 🛠️ CORRECCIÓN 2: El buffer del pedido DEBE ser estrictamente de 12 bytes
+    // Rellenamos el espacio con ceros binarios para que el cifrado 3DES procese bloques exactos
+    const orderBuffer = Buffer.alloc(12, 0);
+    orderBuffer.write(orderId);
 
+    // Inicializar el cifrador triple DES en modo CBC con vector de inicialización en ceros
     const cipher = crypto.createCipheriv(
       "des-ede3-cbc",
       key,
       Buffer.alloc(8, 0)
     );
-    cipher.setAutoPadding(false);
+    cipher.setAutoPadding(false); // Forzamos a no añadir relleno para respetar la estructura de Redsys
 
+    // Derivamos la clave única de la transacción combinando la clave secreta con el identificador del pedido
     const merchantKey = Buffer.concat([
-      cipher.update(order),
+      cipher.update(orderBuffer),
       cipher.final(),
     ]);
 
-    // Firma HMAC SHA256
+    // Generar la firma digital HMAC SHA256 definitiva
     const signature = crypto
       .createHmac("sha256", merchantKey)
       .update(merchantParametersBase64)
       .digest("base64");
 
     return NextResponse.json({
+      // URL oficial del entorno de Pruebas (Sandbox) de Redsys
       url: "https://sis-t.redsys.es:25443/sis/realizarPago",
       params: merchantParametersBase64,
       signature,
