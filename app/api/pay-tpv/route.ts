@@ -10,22 +10,29 @@ export async function POST(request: Request) {
     const terminal = process.env.REDSYS_TERMINAL || "1";
     const currency = process.env.REDSYS_CURRENCY || "978";
 
+    // Validación de configuración
+    if (!secretKey || !merchantCode) {
+      console.error("❌ Variables de entorno Redsys no configuradas");
+      return NextResponse.json({ error: "Configuración incompleta" }, { status: 500 });
+    }
+
     const amountInCents = Math.round(amount * 100).toString();
 
-    // ✅ FIX 1: orderId máximo 12 caracteres, 4 primeros numéricos
-    // "2026" (4 num) + 8 alfanuméricos = 12 exactos
-    const suffix = Date.now().toString().slice(-8); // 8 dígitos del timestamp
-    const orderId = `2026${suffix}`; // 12 caracteres exactos, cumple Redsys
+    // orderId: 4 dígitos numéricos + 8 del timestamp = 12 chars exactos
+    const suffix = Date.now().toString().slice(-8);
+    const orderId = `2026${suffix}`;
 
-    // ✅ FIX 2: Serializar merchantData de forma compacta para no superar 1024 bytes
+    // merchantData: JSON compacto en Base64 estándar
     const merchantDataPayload = JSON.stringify({ customerData, eventName });
-    const merchantDataBase64 = Buffer.from(merchantDataPayload).toString("base64");
+    const merchantDataBase64 = Buffer.from(merchantDataPayload, "utf-8").toString("base64");
 
-    // Verificación de seguridad del tamaño
     if (merchantDataBase64.length > 1024) {
-      console.error("⚠️ DS_MERCHANT_MERCHANTDATA supera 1024 bytes");
       return NextResponse.json({ error: "Datos del cliente demasiado largos" }, { status: 400 });
     }
+
+    console.log("🔧 orderId:", orderId);
+    console.log("🔧 merchantData length:", merchantDataBase64.length);
+    console.log("🔧 merchantData raw:", merchantDataPayload);
 
     const merchantParams = {
       DS_MERCHANT_AMOUNT: amountInCents,
@@ -40,29 +47,34 @@ export async function POST(request: Request) {
       DS_MERCHANT_URLKO: "https://diademilagros.com/pago-cancelado",
     };
 
+    // CRÍTICO: JSON.stringify sin espacios ni saltos de línea
     const merchantParametersBase64 = Buffer.from(
-      JSON.stringify(merchantParams)
+      JSON.stringify(merchantParams),
+      "utf-8"
     ).toString("base64");
 
+    // Derivar clave con 3DES usando el orderId
     const key = Buffer.from(secretKey, "base64");
-
     const order = Buffer.alloc(16, 0);
-    order.write(orderId);
+    order.write(orderId, "utf-8");
 
     const cipher = crypto.createCipheriv("des-ede3-cbc", key, Buffer.alloc(8, 0));
     cipher.setAutoPadding(false);
     const merchantKey = Buffer.concat([cipher.update(order), cipher.final()]);
 
+    // HMAC-SHA256 sobre el Base64 de los parámetros
     const signatureBase64 = crypto
       .createHmac("sha256", merchantKey)
       .update(merchantParametersBase64)
       .digest("base64");
 
-    // ✅ FIX 3: Eliminar también los '=' de padding además de '+' y '/'
+    // Convertir a URL-safe eliminando padding
     const signatureUrlSafe = signatureBase64
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
-      .replace(/=/g, ""); // <-- esto faltaba
+      .replace(/=/g, "");
+
+    console.log("✅ Pago preparado para orden:", orderId, "importe:", amountInCents);
 
     return NextResponse.json({
       url: "https://sis-t.redsys.es:25443/sis/realizarPago",
@@ -70,6 +82,7 @@ export async function POST(request: Request) {
       signature: signatureUrlSafe,
       signatureVersion: "HMAC_SHA256_V1",
     });
+
   } catch (error) {
     console.error("Error en pay-tpv:", error);
     return NextResponse.json(
