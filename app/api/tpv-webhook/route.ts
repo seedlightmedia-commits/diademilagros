@@ -26,14 +26,19 @@ export async function POST(request: Request) {
 
     // 2. 🔐 VERIFICACIÓN DE SEGURIDAD SEGÚN PROTOCOLO OFICIAL REDSYS
     const keyBuffer = Buffer.from(secretKey, "base64");
-    
+    console.log("orderId:", orderId);
+console.log("secretKey:", secretKey.substring(0,10) + "...");
+console.log("keyBuffer length:", keyBuffer.length);
     const cipher = crypto.createCipheriv("des-ede3-cbc", keyBuffer, Buffer.alloc(8, 0));
+    
     cipher.setAutoPadding(false);
+    
     
     const orderBuffer = Buffer.alloc(16, 0);
     orderBuffer.write(orderId);
     
     const merchantKey = Buffer.concat([cipher.update(orderBuffer), cipher.final()]);
+    console.log("merchantKey generada correctamente");
     
     const localSignature = crypto
       .createHmac("sha256", merchantKey)
@@ -182,7 +187,13 @@ export async function POST(request: Request) {
 
     return new Response("OK", { status: 200 });
   } catch (error) {
-    console.error("Error crítico en el webhook de Redsys:", error);
+    console.error("========== ERROR ==========");
+console.error(error);
+
+if (error instanceof Error) {
+  console.error(error.message);
+  console.error(error.stack);
+}
     return new Response("Error interno", { status: 500 });
   }
 }
