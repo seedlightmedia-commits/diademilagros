@@ -17,7 +17,7 @@ export function FeaturedEvent() {
           <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-[#1a2332]">
             {/* Event Image */}
             <Image
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Recurso1-hN6fWklMNgbJFEluDQ9n5gqLhWo2WL.jpg"
+              src="Recurso1.jpg"
               alt="En Honor al Espíritu Santo - Evento Día de Milagros"
               width={800}
               height={400}

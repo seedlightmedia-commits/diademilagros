@@ -17,7 +17,7 @@ const recentEvents = [
   {
     id: 2,
     title: "Testimonios de transformación",
-    videoUrl: "testimonios.mp4",
+    videoUrl: "testimonio2.mp4",
   },
   {
     id: 3,

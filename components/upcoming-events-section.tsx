@@ -19,7 +19,7 @@ const upcomingEvents = [
     date: "1 Agosto 2026",
     time: "17h - 21H",
     location: "Para quienes se encuentren en la cuidad de Barcelona", // Mantiene tu texto exacto
-    image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Recurso2-L79daDs96bLxTYnUfYRMqIv59CTGaB.jpg",
+    image: "Recurso2.jpg",
     note: "Este evento es para toda la familia. Y es totalmente gratis.",
     isFree: true,
     price: 0,
