@@ -18,7 +18,7 @@ const upcomingEvents = [
     title: "DÍA DE MILAGROS",
     date: "1 Agosto 2026",
     time: "17h - 21H",
-    location: "Para quienes se encuentren en la cuidad de Barcelona", // Mantiene tu texto exacto
+    location: "Para quienes se encuentren en la cuidad de Barcelona",
     image: "Recurso2.jpg",
     note: "Este evento es para toda la familia. Y es totalmente gratis.",
     isFree: true,
@@ -29,7 +29,7 @@ const upcomingEvents = [
     title: "CINE PARA NIÑOS",
     date: "1 Agosto 2026",
     time: "17H - 21H",
-    location: "Para quienes se encuentren en la cuidad de Barcelona", // Mantiene tu texto exacto
+    location: "Cine Aribau, Calle Aribau 8,  Barcelona Metro L1 L2 Universitat",
     image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Recurso3-R2JDtJacHbQ8U6fet0xIITCAMhjAAt.jpg",
     note: "Este evento es para toda la familia. Niños desde 2 años.",
     isFree: false,
@@ -37,17 +37,13 @@ const upcomingEvents = [
   },
 ];
 
-// `EventsSection` removed to avoid duplicate components — use `UpcomingEventsSection` below.
-
-// Google Sheets API endpoint placeholder
 const GOOGLE_SHEETS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxzAWwyBMsyOfKwaC1GFZnAy3woPg_3sXoQjM8aJKb9IhYsWeiq2ArUjT4ayiQGGIVMoQ/exec";
 
-// TPV Virtual API placeholders
 const TPV_VIRTUAL_CONFIG = {
   merchantId: "YOUR_MERCHANT_ID",
   terminalId: "YOUR_TERMINAL_ID",
   secretKey: "YOUR_SECRET_KEY",
-  environment: "sandbox", // or "production"
+  environment: "sandbox",
 };
 
 interface FormData {
@@ -55,6 +51,19 @@ interface FormData {
   phone: string;
   email: string;
   tickets: number;
+  // Día de Milagros
+  age?: string;
+  metro?: string;
+  nationality?: string;
+  invitedBy?: string;
+  howDidYouMeetUs?: string;
+  attendanceGroup?: string;
+  // Cine para Niños
+  childAge?: string;
+  fatherName?: string;
+  motherName?: string;
+  fatherPhone?: string;
+  motherPhone?: string;
 }
 
 export function UpcomingEventsSection() {
@@ -64,11 +73,22 @@ export function UpcomingEventsSection() {
     phone: "",
     email: "",
     tickets: 1,
+    age: "",
+    metro: "",
+    nationality: "",
+    invitedBy: "",
+    howDidYouMeetUs: "",
+    attendanceGroup: "",
+    childAge: "",
+    fatherName: "",
+    motherName: "",
+    fatherPhone: "",
+    motherPhone: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -82,14 +102,12 @@ export function UpcomingEventsSection() {
 
     try {
       if (selectedEvent?.isFree) {
-        // Generar código único
         const uniqueCode =
           "DM-" +
           Date.now() +
           "-" +
           Math.floor(Math.random() * 100000);
 
-        // Generar imagen QR en Base64
         const qrImage = await QRCode.toDataURL(uniqueCode);
 
         const response = await fetch("/api/register", {
@@ -101,11 +119,17 @@ export function UpcomingEventsSection() {
             email: formData.email,
             uniqueCode,
             qrImage,
+            // Campos extra Día de Milagros
+            age: formData.age,
+            metro: formData.metro,
+            nationality: formData.nationality,
+            invitedBy: formData.invitedBy,
+            howDidYouMeetUs: formData.howDidYouMeetUs,
+            attendanceGroup: formData.attendanceGroup,
           }),
         });
 
         const result = await response.json();
-
         console.log("Apps Script:", result);
 
         if (result.status !== "success") {
@@ -114,12 +138,8 @@ export function UpcomingEventsSection() {
 
         setRegistrationComplete(true);
       } else {
-        // =======================================================
-        // 🚀 PASO REAL DE PAGO: CONEXIÓN CON TPV VIRTUAL REDSYS
-        // =======================================================
         const totalAmount = (selectedEvent?.price || 0) * formData.tickets;
-        
-        // 1. Solicitamos los datos cifrados a nuestra API intermedia
+
         const response = await fetch("/api/pay-tpv", {
           method: "POST",
           headers: {
@@ -128,12 +148,11 @@ export function UpcomingEventsSection() {
           body: JSON.stringify({
             eventName: selectedEvent?.title,
             amount: totalAmount,
-            customerData: formData, // Envía nombre, teléfono, email y tickets
+            customerData: formData,
           }),
         });
 
         const paymentData = await response.json();
-
         console.log(paymentData);
         console.log(response.status);
 
@@ -141,53 +160,49 @@ export function UpcomingEventsSection() {
           throw new Error(paymentData.error || "Error al procesar la orden");
         }
 
-        // 2. Creamos el formulario virtual oculto para saltar a la pantalla del banco
         const form = document.createElement("form");
         form.method = "POST";
-        form.action = paymentData.url; // URL oficial de Redsys provista por la API
+        form.action = paymentData.url;
 
-        // Adjuntamos el bloque de parámetros comerciales cifrados
         const paramsInput = document.createElement("input");
         paramsInput.type = "hidden";
         paramsInput.name = "Ds_MerchantParameters";
         paramsInput.value = paymentData.params;
         form.appendChild(paramsInput);
 
-        // Adjuntamos la firma digital de validación obligatoria
         const signatureInput = document.createElement("input");
         signatureInput.type = "hidden";
         signatureInput.name = "Ds_Signature";
         signatureInput.value = paymentData.signature;
         form.appendChild(signatureInput);
 
-        // 3. Insertamos dinámicamente en la web y enviamos al feligrés al banco
         const signatureVersionInput = document.createElement("input");
-              signatureVersionInput.type = "hidden";
-              signatureVersionInput.name = "Ds_SignatureVersion";
-              signatureVersionInput.value = paymentData.signatureVersion;
+        signatureVersionInput.type = "hidden";
+        signatureVersionInput.name = "Ds_SignatureVersion";
+        signatureVersionInput.value = paymentData.signatureVersion;
+        form.appendChild(signatureVersionInput);
 
-      form.appendChild(signatureVersionInput);
         document.body.appendChild(form);
         console.log(paymentData.url);
         console.log(paymentData.params);
         console.log(paymentData.signature);
         console.log("================================");
-console.log("URL:", paymentData.url);
-console.log("SignatureVersion:", paymentData.signatureVersion);
-console.log("MerchantParameters:", paymentData.params);
-console.log("Signature:", paymentData.signature);
-console.log("================================");
+        console.log("URL:", paymentData.url);
+        console.log("SignatureVersion:", paymentData.signatureVersion);
+        console.log("MerchantParameters:", paymentData.params);
+        console.log("Signature:", paymentData.signature);
+        console.log("================================");
 
-if (
-  !paymentData.url ||
-  !paymentData.params ||
-  !paymentData.signature ||
-  !paymentData.signatureVersion
-) {
-  throw new Error("La API /api/pay-tpv no devolvió todos los datos necesarios.");
-}
-document.body.appendChild(form);
-form.submit();
+        if (
+          !paymentData.url ||
+          !paymentData.params ||
+          !paymentData.signature ||
+          !paymentData.signatureVersion
+        ) {
+          throw new Error("La API /api/pay-tpv no devolvió todos los datos necesarios.");
+        }
+        document.body.appendChild(form);
+        form.submit();
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -197,10 +212,25 @@ form.submit();
     }
   };
 
-
   const closeDialog = () => {
     setSelectedEvent(null);
-    setFormData({ name: "", phone: "", email: "", tickets: 1 });
+    setFormData({
+      name: "",
+      phone: "",
+      email: "",
+      tickets: 1,
+      age: "",
+      metro: "",
+      nationality: "",
+      invitedBy: "",
+      howDidYouMeetUs: "",
+      attendanceGroup: "",
+      childAge: "",
+      fatherName: "",
+      motherName: "",
+      fatherPhone: "",
+      motherPhone: "",
+    });
     setRegistrationComplete(false);
   };
 
@@ -238,7 +268,7 @@ form.submit();
                   <p className="font-semibold">{event.date}</p>
                   <p>{event.time}</p>
                 </div>
-                
+
                 <p className="text-sm md:text-base text-gray-600 mb-3">
                   {event.location}
                 </p>
@@ -291,7 +321,9 @@ form.submit();
               </Button>
             </div>
           ) : (
-                        <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+
+              {/* ── Campos comunes ── */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nombre completo *
@@ -305,7 +337,6 @@ form.submit();
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
-
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -337,6 +368,192 @@ form.submit();
                 />
               </div>
 
+              {/* ── Campos exclusivos: Día de Milagros ── */}
+              {selectedEvent?.id === 1 && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Edad *
+                    </label>
+                    <input
+                      type="number"
+                      name="age"
+                      value={formData.age}
+                      onChange={handleInputChange}
+                      min={1}
+                      max={120}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      placeholder="Ej: 35"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Metro más cercano a tu domicilio *
+                    </label>
+                    <input
+                      type="text"
+                      name="metro"
+                      value={formData.metro}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      placeholder="Ej: Sagrada Família"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nacionalidad *
+                    </label>
+                    <input
+                      type="text"
+                      name="nationality"
+                      value={formData.nationality}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      placeholder="Ej: Española, Colombiana..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nombre de quien te invitó *
+                    </label>
+                    <input
+                      type="text"
+                      name="invitedBy"
+                      value={formData.invitedBy}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      placeholder="Nombre completo"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      ¿Cómo nos conociste? *
+                    </label>
+                    <select
+                      name="howDidYouMeetUs"
+                      value={formData.howDidYouMeetUs}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm bg-white"
+                    >
+                      <option value="">Selecciona una opción</option>
+                      <option value="Redes sociales">Redes sociales</option>
+                      <option value="Un amigo">Un amigo</option>
+                      <option value="Familiar">Familiar</option>
+                      <option value="Internet">Internet</option>
+                      <option value="Flyer / Cartel">Flyer / Cartel</option>
+                      <option value="Otro">Otro</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Grupo al que asistes *
+                    </label>
+                    <input
+                      type="text"
+                      name="attendanceGroup"
+                      value={formData.attendanceGroup}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      placeholder="Nombre del grupo"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* ── Campos exclusivos: Cine para Niños ── */}
+              {selectedEvent?.id === 2 && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Edad del niño/a *
+                    </label>
+                    <input
+                      type="number"
+                      name="childAge"
+                      value={formData.childAge}
+                      onChange={handleInputChange}
+                      min={2}
+                      max={18}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      placeholder="Ej: 7"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nombre del padre *
+                    </label>
+                    <input
+                      type="text"
+                      name="fatherName"
+                      value={formData.fatherName}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      placeholder="Nombre completo"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nombre de la madre *
+                    </label>
+                    <input
+                      type="text"
+                      name="motherName"
+                      value={formData.motherName}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      placeholder="Nombre completo"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Teléfono del padre *
+                    </label>
+                    <input
+                      type="tel"
+                      name="fatherPhone"
+                      value={formData.fatherPhone}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      placeholder="+34 612 345 678"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Teléfono de la madre *
+                    </label>
+                    <input
+                      type="tel"
+                      name="motherPhone"
+                      value={formData.motherPhone}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                      placeholder="+34 612 345 678"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* ── Campos de pago (solo Cine para Niños) ── */}
               {!selectedEvent?.isFree && (
                 <>
                   <div>
