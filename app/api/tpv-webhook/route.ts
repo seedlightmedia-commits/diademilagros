@@ -65,31 +65,38 @@ export async function POST(request: Request) {
 
     console.log("🔒 Firma válida. Pedido:", orderId);
 
-    // 3. Solo procesar pagos aprobados (códigos 0-99)
+        // 3. Solo procesar pagos aprobados (códigos 0-99)
     if (responseCode >= 0 && responseCode <= 99) {
-      const merchantDataRaw = normalizedParams.ds_merchantdata || "";
+      // 🛠️ CORRECCIÓN: Intentar leer tanto en minúsculas como en mayúsculas por seguridad
+      const merchantDataRaw = normalizedParams.ds_merchantdata || params.Ds_MerchantData || "";
 
-      console.log("📦 merchantData raw:", merchantDataRaw);
+      console.log("📦 merchantData raw recibido:", merchantDataRaw);
 
       let customerData = { name: "Invitado", email: "", phone: "", tickets: 1 };
       let eventName = "CINE PARA NIÑOS";
 
       if (merchantDataRaw) {
         try {
-          // Normalizar Base64 y restaurar padding
-          const sanitized = merchantDataRaw.replace(/-/g, "+").replace(/_/g, "/");
-          const padded = sanitized + "=".repeat((4 - (sanitized.length % 4)) % 4);
-          const decoded = Buffer.from(padded, "base64").toString("utf-8");
+          // 🛠️ SOLUCIÓN ROBUSTA: Convierte de forma segura cualquier variante de Base64 (estándar o URL-safe)
+          const base64Standard = merchantDataRaw
+            .replace(/-/g, "+")
+            .replace(/_/g, "/");
+          
+          // Reconstruir el padding '=' si le hace falta
+          const paddedBase64 = base64Standard + "=".repeat((4 - (base64Standard.length % 4)) % 4);
+          
+          const decoded = Buffer.from(paddedBase64, "base64").toString("utf-8");
 
-          console.log("📦 merchantData decodificado:", decoded);
+          console.log("📦 merchantData decodificado con éxito:", decoded);
 
-          if (!decoded.trim().startsWith("{")) {
-            throw new Error(`No es JSON válido: ${decoded.slice(0, 80)}`);
+          if (decoded.trim().startsWith("{")) {
+            const parsed = JSON.parse(decoded);
+            // 🛠️ Mantenemos tus datos base exactamente igual sin alterar tu estructura
+            if (parsed.customerData) customerData = parsed.customerData;
+            if (parsed.eventName) eventName = parsed.eventName;
+          } else {
+            throw new Error("El string decodificado no mantiene formato JSON");
           }
-
-          const parsed = JSON.parse(decoded);
-          if (parsed.customerData) customerData = parsed.customerData;
-          if (parsed.eventName) eventName = parsed.eventName;
 
           console.log("✅ customerData OK:", { email: customerData.email, eventName });
 
@@ -98,9 +105,11 @@ export async function POST(request: Request) {
         }
       }
 
+      // 🛠️ CAMBIO SEGURO CONTRA CAÍDAS: Si el email falla, registramos el error en logs pero dejamos que Redsys reciba un 200
+      // para que el banco no piense que tu servidor web se ha caído.
       if (!customerData.email) {
-        console.error("❌ Email vacío — no se puede enviar correo ni registrar en Sheets");
-        return new Response("Email faltante", { status: 400 });
+        console.error("❌ Email vacío — No se puede procesar correos ni Sheets en este intento");
+        return new Response("OK", { status: 200 }); 
       }
 
       const numTickets = Number(customerData.tickets) || 1;
