@@ -12,7 +12,8 @@ export async function POST(request: Request) {
 
     // Pasar a céntimos (Ej: 8€ = 800)
     const amountInCents = Math.round(amount * 100).toString();
-    // Número de pedido de 12 caracteres (Redsys estricto)
+
+    // Número de pedido de 12 caracteres
     const orderId = `CINE${Date.now().toString().slice(-8)}`;
 
     const merchantParams = {
@@ -22,46 +23,62 @@ export async function POST(request: Request) {
       DS_MERCHANT_CURRENCY: currency,
       DS_MERCHANT_TERMINAL: terminal,
       DS_MERCHANT_TRANSACTIONTYPE: "0",
-      DS_MERCHANT_MERCHANTDATA: encodeURIComponent(JSON.stringify({ customerData, eventName })),
-      
-      // 🛠️ CORRECCIÓN 1: Apuntar a la ruta exacta de tu nuevo Webhook de confirmación
+      DS_MERCHANT_MERCHANTDATA: JSON.stringify({
+        customerData,
+        eventName,
+      }),
+
       DS_MERCHANT_MERCHANTURL: "https://diademilagros.com",
-      
-      // 🛠️ CORRECCIÓN 2: Rutas con parámetros para avisar en tu web si el pago fue exitoso o falló
       DS_MERCHANT_URLOK: "https://diademilagros.com",
       DS_MERCHANT_URLKO: "https://diademilagros.com",
     };
 
-    // 🔒 PROCESO DE CIFRADO NATIVO REDSYS SHA-256
-    const merchantParametersBase64 = Buffer.from(JSON.stringify(merchantParams)).toString("base64");
-    
-    // 1. Descifrar la clave secreta comercial (3DES)
-    const keyBuffer = Buffer.from(secretKey, "base64");
-    const cipher = crypto.createCipheriv("des-ede3-cbc", keyBuffer, Buffer.alloc(8, 0));
+    // Codificación Base64 de los parámetros
+    const merchantParametersBase64 = Buffer.from(
+      JSON.stringify(merchantParams)
+    ).toString("base64");
+
+    // Clave secreta
+    const key = Buffer.from(secretKey, "base64");
+
+    // Preparar pedido para 3DES
+    const order = Buffer.alloc(16);
+    order.write(orderId);
+
+    const cipher = crypto.createCipheriv(
+      "des-ede3-cbc",
+      key,
+      Buffer.alloc(8, 0)
+    );
     cipher.setAutoPadding(false);
-    
-    // 2. Ajustar la orden en un bloque de 8 bytes rellenos de ceros
-    const orderBuffer = Buffer.alloc(12, 0);
-    orderBuffer.write(orderId);
-    
-    const merchantKey = Buffer.concat([cipher.update(orderBuffer), cipher.final()]);
-    
-    // 3. Generar la firma digital final
-    const merchantSignature = crypto
+
+    const merchantKey = Buffer.concat([
+      cipher.update(order),
+      cipher.final(),
+    ]);
+
+    // Firma HMAC SHA256
+    const signature = crypto
       .createHmac("sha256", merchantKey)
       .update(merchantParametersBase64)
       .digest("base64");
 
     return NextResponse.json({
-      // 🛠️ CORRECCIÓN 3: URL oficial del entorno de Pruebas (Sandbox) de Redsys. 
-      // (Cuando el banco te dé el visto bueno final, se cambia por la de producción: https://redsys.es)
-      url: "https://redsys.es", 
+      url: "https://sis-t.redsys.es:25443/sis/realizarPago",
       params: merchantParametersBase64,
-      signature: merchantSignature,
+      signature,
+      signatureVersion: "HMAC_SHA256_V1",
     });
-
   } catch (error) {
-    console.error("Error en pay-tpv nativo:", error);
-    return NextResponse.json({ error: "No se pudo preparar la orden de pago" }, { status: 500 });
+    console.error("Error en pay-tpv:", error);
+
+    return NextResponse.json(
+      {
+        error: "No se pudo preparar la orden de pago",
+      },
+      {
+        status: 500,
+      }
+    );
   }
 }

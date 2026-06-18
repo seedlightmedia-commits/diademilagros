@@ -82,62 +82,121 @@ export function UpcomingEventsSection() {
 
     try {
       if (selectedEvent?.isFree) {
-  // Generar código único
-const uniqueCode =
-  "DM-" +
-  Date.now() +
-  "-" +
-  Math.floor(Math.random() * 100000);
+        // Generar código único
+        const uniqueCode =
+          "DM-" +
+          Date.now() +
+          "-" +
+          Math.floor(Math.random() * 100000);
 
-// Generar imagen QR en Base64
-const qrImage = await QRCode.toDataURL(uniqueCode);
+        // Generar imagen QR en Base64
+        const qrImage = await QRCode.toDataURL(uniqueCode);
 
-const response = await fetch("/api/register", {
-  method: "POST",
-  body: JSON.stringify({
-    eventName: selectedEvent.title,
-    name: formData.name,
-    phone: formData.phone,
-    email: formData.email,
-    uniqueCode,
-    qrImage,
-  }),
-});
-
-const result = await response.json();
-
-console.log("Apps Script:", result);
-
-if (result.status !== "success") {
-  throw new Error(result.message || "Error al registrar");
-}
-
-  setRegistrationComplete(true);
-      } else {
-        // Paid event - redirect to TPV Virtual payment gateway
-        const totalAmount = (selectedEvent?.price || 0) * formData.tickets;
-        
-        // TPV Virtual integration placeholder
-        // In production, this would create a payment session and redirect
-        console.log("[v0] Would initiate TPV Virtual payment:", {
-          amount: totalAmount,
-          currency: "EUR",
-          merchantId: TPV_VIRTUAL_CONFIG.merchantId,
-          terminalId: TPV_VIRTUAL_CONFIG.terminalId,
-          orderId: `ORDER_${Date.now()}`,
-          description: `${selectedEvent?.title} - ${formData.tickets} entrada(s)`,
-          customerData: formData,
+        const response = await fetch("/api/register", {
+          method: "POST",
+          body: JSON.stringify({
+            eventName: selectedEvent.title,
+            name: formData.name,
+            phone: formData.phone,
+            email: formData.email,
+            uniqueCode,
+            qrImage,
+          }),
         });
 
-        // Simulate successful payment for demo
+        const result = await response.json();
+
+        console.log("Apps Script:", result);
+
+        if (result.status !== "success") {
+          throw new Error(result.message || "Error al registrar");
+        }
+
         setRegistrationComplete(true);
+      } else {
+        // =======================================================
+        // 🚀 PASO REAL DE PAGO: CONEXIÓN CON TPV VIRTUAL REDSYS
+        // =======================================================
+        const totalAmount = (selectedEvent?.price || 0) * formData.tickets;
+        
+        // 1. Solicitamos los datos cifrados a nuestra API intermedia
+        const response = await fetch("/api/pay-tpv", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            eventName: selectedEvent?.title,
+            amount: totalAmount,
+            customerData: formData, // Envía nombre, teléfono, email y tickets
+          }),
+        });
+
+        const paymentData = await response.json();
+
+        console.log(paymentData);
+        console.log(response.status);
+
+        if (!response.ok) {
+          throw new Error(paymentData.error || "Error al procesar la orden");
+        }
+
+        // 2. Creamos el formulario virtual oculto para saltar a la pantalla del banco
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = paymentData.url; // URL oficial de Redsys provista por la API
+
+        // Adjuntamos el bloque de parámetros comerciales cifrados
+        const paramsInput = document.createElement("input");
+        paramsInput.type = "hidden";
+        paramsInput.name = "Ds_MerchantParameters";
+        paramsInput.value = paymentData.params;
+        form.appendChild(paramsInput);
+
+        // Adjuntamos la firma digital de validación obligatoria
+        const signatureInput = document.createElement("input");
+        signatureInput.type = "hidden";
+        signatureInput.name = "Ds_Signature";
+        signatureInput.value = paymentData.signature;
+        form.appendChild(signatureInput);
+
+        // 3. Insertamos dinámicamente en la web y enviamos al feligrés al banco
+        const signatureVersionInput = document.createElement("input");
+              signatureVersionInput.type = "hidden";
+              signatureVersionInput.name = "Ds_SignatureVersion";
+              signatureVersionInput.value = paymentData.signatureVersion;
+
+      form.appendChild(signatureVersionInput);
+        document.body.appendChild(form);
+        console.log(paymentData.url);
+        console.log(paymentData.params);
+        console.log(paymentData.signature);
+        console.log("================================");
+console.log("URL:", paymentData.url);
+console.log("SignatureVersion:", paymentData.signatureVersion);
+console.log("MerchantParameters:", paymentData.params);
+console.log("Signature:", paymentData.signature);
+console.log("================================");
+
+if (
+  !paymentData.url ||
+  !paymentData.params ||
+  !paymentData.signature ||
+  !paymentData.signatureVersion
+) {
+  throw new Error("La API /api/pay-tpv no devolvió todos los datos necesarios.");
+}
+document.body.appendChild(form);
+form.submit();
       }
     } catch (error) {
       console.error("Registration error:", error);
+      alert("No se pudo iniciar el proceso de pago. Por favor, inténtelo de nuevo.");
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   const closeDialog = () => {
     setSelectedEvent(null);
