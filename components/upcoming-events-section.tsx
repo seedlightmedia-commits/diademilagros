@@ -18,7 +18,7 @@ const upcomingEvents = [
     title: "DÍA DE MILAGROS",
     date: "1 Agosto 2026",
     time: "17h - 21H",
-    location: "Para quienes se encuentren en la cuidad de Barcelona",
+    location: " Cine Aribau, Calle Aribau 8, Barcelon, Metro L1, L2 Universitat",
     image: "Recurso2.jpg",
     note: "Este evento es para toda la familia. Y es totalmente gratis.",
     isFree: true,
@@ -292,7 +292,7 @@ export function UpcomingEventsSection() {
 
       {/* Registration Modal */}
       <Dialog open={!!selectedEvent} onOpenChange={closeDialog}>
-        <DialogContent className="sm:max-w-md bg-white">
+       <DialogContent className="sm:max-w-md bg-white max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-primary font-bold text-center">
               {registrationComplete ? "¡Registro Exitoso!" : `Registro - ${selectedEvent?.title}`}
