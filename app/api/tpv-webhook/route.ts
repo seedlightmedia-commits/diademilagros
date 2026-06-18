@@ -159,7 +159,8 @@ export async function POST(request: Request) {
                 <td align="center">
                   <table width="620" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,0.05);">
                     <tr>
-                      <td align="center" style="background:#ff7542;padding:35px;">
+                      <td align="center" bgcolor="#ff7542" style="background:#ff7542;padding:35px;">
+                        <img src="https://diademilagros.com" alt="Día de Milagros" width="240" style="display:block;margin:0 auto 15px auto;height:auto;">
                         <h1 style="color:white;margin:0;font-size:34px;letter-spacing:1px;font-weight:bold;">
                           CINE PARA NIÑOS
                         </h1>
@@ -178,7 +179,7 @@ export async function POST(request: Request) {
                           <img src="cid:qr-code-inline" width="240" alt="Código QR" style="display:block;margin:auto;">
                         </div>
                         <p align="center" style="font-size:15px;color:#222;font-weight:bold;">
-                          Presenta este QR en la entrada.<br>
+                          Presenta este QR en la entrada de la iglesia.<br>
                           Válido para ${numTickets} persona(s).
                         </p>
                         <hr style="border:none;border-top:1px solid #eee;margin-top:30px;">
@@ -193,20 +194,16 @@ export async function POST(request: Request) {
           </html>
           `,
         });
-        console.log("📧 Correo enviado:", emailResult);
+        console.log("📧 Respuesta Resend:", emailResult);
       } catch (emailError) {
-        console.error("❌ Error enviando correo:", emailError);
+        console.error("❌ Error enviando correo con Resend:", emailError);
       }
-
-      console.log("✅ Proceso completado para pedido:", orderId);
-    } else {
-      console.log("ℹ️ Pago denegado o pendiente. Código:", responseCode);
+      console.log("✅ Proceso completado de forma limpia.");
     }
 
     return new Response("OK", { status: 200 });
-
   } catch (error) {
-    console.error("❌ Error crítico en webhook:", error);
+    console.error("Error crítico en el webhook de Redsys:", error);
     return new Response("Error interno", { status: 500 });
   }
 }
