@@ -61,37 +61,47 @@ export async function POST(request: Request) {
       let eventName = "CINE PARA NIÑOS";
 
       try {
-  // Normalizar Base64: revertir URL-safe y restaurar padding obligatorio
-  const sanitized = merchantDataRaw
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
+        let decodedStr = "";
+        
+        // Comprobar si viene codificado en formato URL clásico
+        if (merchantDataRaw.startsWith("%") || merchantDataRaw.includes("%22")) {
+          decodedStr = decodeURIComponent(merchantDataRaw);
+        } else {
+          // Normalizar Base64: revertir URL-safe y restaurar padding obligatorio
+          const sanitized = merchantDataRaw.replace(/-/g, "+").replace(/_/g, "/");
+          const padded = sanitized + "=".repeat((4 - (sanitized.length % 4)) % 4);
+          decodedStr = Buffer.from(padded, "base64").toString("utf-8");
+        }
 
-  // ✅ FIX CRÍTICO: añadir '=' de padding que Redsys omite al transmitir
-  const padded = sanitized + "=".repeat((4 - (sanitized.length % 4)) % 4);
+        // Si la cadena decodificada no arranca con objeto, aplicar fallback secundario por URL
+        if (!decodedStr.trim().startsWith("{")) {
+          decodedStr = decodeURIComponent(merchantDataRaw);
+        }
 
-  const decodedStr = Buffer.from(padded, "base64").toString("utf-8");
+        const parsedMerchantData = JSON.parse(decodedStr);
+        if (parsedMerchantData.customerData) customerData = parsedMerchantData.customerData;
+        if (parsedMerchantData.eventName) eventName = parsedMerchantData.eventName;
 
-  // Verificar que lo decodificado parece JSON antes de parsear
-  if (!decodedStr.startsWith("{")) {
-    throw new Error(`merchantData no es JSON válido tras decodificar: ${decodedStr.slice(0, 50)}`);
-  }
+        console.log("✅ merchantData OK →", { email: customerData.email, eventName });
 
-  const parsedMerchantData = JSON.parse(decodedStr);
-  if (parsedMerchantData.customerData) customerData = parsedMerchantData.customerData;
-  if (parsedMerchantData.eventName) eventName = parsedMerchantData.eventName;
+      } catch (parseError) {
+        console.error("❌ Error decodificando merchantData:", parseError, "| Raw recibido:", merchantDataRaw);
+        
+        // Intento de rescate final directo por URL encoding clásico
+        try {
+          const fallbackStr = decodeURIComponent(merchantDataRaw);
+          const fallbackJson = JSON.parse(fallbackStr);
+          if (fallbackJson.customerData) customerData = fallbackJson.customerData;
+          if (fallbackJson.eventName) eventName = fallbackJson.eventName;
+        } catch (e) {
+          console.error("No se pudo rescatar el objeto de datos del comerciante.");
+        }
+      }
 
-  console.log("✅ merchantData OK →", { email: customerData.email, eventName });
-
-} catch (parseError) {
-  console.error("❌ Error decodificando merchantData:", parseError, "| Raw recibido:", merchantDataRaw);
-  // No hay fallback posible si el Base64 viene corrupto;
-  // el problema está en el pay-tpv al codificarlo, no aquí.
-}
-
-if (!customerData.email) {
-  console.error("❌ Abortado: email vacío. Revisar que pay-tpv codifica merchantData correctamente.");
-  return new Response("Email faltante", { status: 400 });
-}
+      if (!customerData.email) {
+        console.error("❌ Abortado: email vacío. Revisar que pay-tpv codifica merchantData correctamente.");
+        return new Response("Email faltante", { status: 400 });
+      }
 
       const numTickets = customerData.tickets || 1;
       const uniqueCode = "DM-" + Date.now() + "-" + Math.floor(Math.random() * 100000);
