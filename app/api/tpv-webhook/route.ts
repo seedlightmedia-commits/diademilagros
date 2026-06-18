@@ -61,34 +61,37 @@ export async function POST(request: Request) {
       let eventName = "CINE PARA NIÑOS";
 
       try {
-        let decodedStr = "";
-        if (merchantDataRaw.startsWith("%") || merchantDataRaw.includes("%22")) {
-          decodedStr = decodeURIComponent(merchantDataRaw);
-        } else {
-          const sanitizedBase64 = merchantDataRaw.replace(/-/g, "+").replace(/_/g, "/");
-          decodedStr = Buffer.from(sanitizedBase64, "base64").toString("utf-8");
-        }
-        
-        const parsedMerchantData = JSON.parse(decodedStr);
-        if (parsedMerchantData.customerData) customerData = parsedMerchantData.customerData;
-        if (parsedMerchantData.eventName) eventName = parsedMerchantData.eventName;
-      } catch (parseError) {
-        console.warn("⚠️ Mapeo alternativo: Usando fallback de extracción de URL", parseError);
-        try {
-          const alternativeStr = decodeURIComponent(merchantDataRaw);
-          const parsedAlternative = JSON.parse(alternativeStr);
-          if (parsedAlternative.customerData) customerData = parsedAlternative.customerData;
-          if (parsedAlternative.eventName) eventName = parsedAlternative.eventName;
-        } catch (e) {
-          console.error("Fallo definitivo parseando metadatos.");
-        }
-      }
+  // Normalizar Base64: revertir URL-safe y restaurar padding obligatorio
+  const sanitized = merchantDataRaw
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
 
-      // Validar si disponemos de un email de destino válido antes de mandar llamadas externas
-      if (!customerData.email) {
-        console.error("❌ Abortado: No existe email en el payload del cliente.");
-        return new Response("Email faltante", { status: 400 });
-      }
+  // ✅ FIX CRÍTICO: añadir '=' de padding que Redsys omite al transmitir
+  const padded = sanitized + "=".repeat((4 - (sanitized.length % 4)) % 4);
+
+  const decodedStr = Buffer.from(padded, "base64").toString("utf-8");
+
+  // Verificar que lo decodificado parece JSON antes de parsear
+  if (!decodedStr.startsWith("{")) {
+    throw new Error(`merchantData no es JSON válido tras decodificar: ${decodedStr.slice(0, 50)}`);
+  }
+
+  const parsedMerchantData = JSON.parse(decodedStr);
+  if (parsedMerchantData.customerData) customerData = parsedMerchantData.customerData;
+  if (parsedMerchantData.eventName) eventName = parsedMerchantData.eventName;
+
+  console.log("✅ merchantData OK →", { email: customerData.email, eventName });
+
+} catch (parseError) {
+  console.error("❌ Error decodificando merchantData:", parseError, "| Raw recibido:", merchantDataRaw);
+  // No hay fallback posible si el Base64 viene corrupto;
+  // el problema está en el pay-tpv al codificarlo, no aquí.
+}
+
+if (!customerData.email) {
+  console.error("❌ Abortado: email vacío. Revisar que pay-tpv codifica merchantData correctamente.");
+  return new Response("Email faltante", { status: 400 });
+}
 
       const numTickets = customerData.tickets || 1;
       const uniqueCode = "DM-" + Date.now() + "-" + Math.floor(Math.random() * 100000);
