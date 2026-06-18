@@ -66,25 +66,36 @@ export async function POST(request: Request) {
     console.log("🔒 Firma válida. Pedido:", orderId);
 
     // 3. Solo procesar pagos aprobados (códigos 0-99)
+       // 3. Solo procesar pagos aprobados (códigos 0-99)
     if (responseCode >= 0 && responseCode <= 99) {
       
       const merchantDataRaw = normalizedParams.ds_merchantdata || params.Ds_MerchantData || "";
-      console.log("📦 merchantData raw detectado:", merchantDataRaw);
+      console.error("📦 [DIAGNÓSTICO] Ds_MerchantData en bruto recibido:", merchantDataRaw);
 
       let customerData = { name: "Invitado", email: "", phone: "", tickets: 1 };
       let eventName = "CINE PARA NIÑOS";
 
       if (merchantDataRaw) {
         try {
+          // 1. Limpieza estándar de caracteres URL y rellenado de Base64
           const sanitized = merchantDataRaw.replace(/-/g, "+").replace(/_/g, "/");
           const padded = sanitized + "=".repeat((4 - (sanitized.length % 4)) % 4);
-          const decoded = Buffer.from(padded, "base64").toString("utf-8");
-
-          console.log("📦 merchantData decodificado a string:", decoded);
-
-          const parsed = JSON.parse(decoded);
-          const cData = parsed.customerData || parsed.customerdata;
           
+          // 2. Decodificar a texto plano
+          let decoded = Buffer.from(padded, "base64").toString("utf-8");
+          console.error("📦 [DIAGNÓSTICO] Texto decodificado crudo:", decoded);
+
+          // 🛠️ REPARACIÓN CRÍTICA: Cortar cualquier carácter basura que Redsys añada después del cierre del JSON
+          const lastCurlyBrace = decoded.lastIndexOf("}");
+          if (lastCurlyBrace !== -1) {
+            decoded = decoded.substring(0, lastCurlyBrace + 1);
+          }
+
+          // 3. Parsear el JSON limpio
+          const parsed = JSON.parse(decoded);
+          
+          // Extraer los datos flexibles
+          const cData = parsed.customerData || parsed.customerdata;
           if (cData) {
             customerData = {
               name: cData.name || cData.Name || "Invitado",
@@ -95,18 +106,22 @@ export async function POST(request: Request) {
           }
           
           eventName = parsed.eventName || parsed.eventname || eventName;
-          console.log("✅ Datos del cliente asignados con éxito:", customerData);
+          console.error("✅ Datos del cliente asignados con éxito:", customerData);
 
         } catch (err) {
           console.error("❌ Error grave decodificando merchantData:", err);
         }
       }
 
+      // Filtro de seguridad
       if (!customerData.email || customerData.email.trim() === "") {
         console.error("❌ El email se decodificó como vacío. No se puede continuar al Excel ni enviar correo.");
         return new Response("OK", { status: 200 }); 
       }
 
+      // ========================================================
+      // 🚀 A PARTIR DE AQUÍ SIGUE TU CÓDIGO DE QR, SHEETS Y RESEND COPIADO IGUAL...
+      // ========================================================
       const numTickets = Number(customerData.tickets) || 1;
       const uniqueCode = `DM-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 
