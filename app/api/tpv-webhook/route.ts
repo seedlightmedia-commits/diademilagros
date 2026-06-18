@@ -75,35 +75,39 @@ export async function POST(request: Request) {
       let customerData = { name: "Invitado", email: "", phone: "", tickets: 1 };
       let eventName = "CINE PARA NIÑOS";
 
-      if (merchantDataRaw) {
+       if (merchantDataRaw) {
         try {
-          // 🛠️ SOLUCIÓN ROBUSTA: Convierte de forma segura cualquier variante de Base64 (estándar o URL-safe)
-          const base64Standard = merchantDataRaw
-            .replace(/-/g, "+")
-            .replace(/_/g, "/");
-          
-          // Reconstruir el padding '=' si le hace falta
-          const paddedBase64 = base64Standard + "=".repeat((4 - (base64Standard.length % 4)) % 4);
-          
-          const decoded = Buffer.from(paddedBase64, "base64").toString("utf-8");
+          // Restaurar caracteres estándar de Base64
+          const sanitized = merchantDataRaw.replace(/-/g, "+").replace(/_/g, "/");
+          const padded = sanitized + "=".repeat((4 - (sanitized.length % 4)) % 4);
+          const decoded = Buffer.from(padded, "base64").toString("utf-8");
 
-          console.log("📦 merchantData decodificado con éxito:", decoded);
+          console.log("📦 merchantData decodificado:", decoded);
 
           if (decoded.trim().startsWith("{")) {
             const parsed = JSON.parse(decoded);
-            // 🛠️ Mantenemos tus datos base exactamente igual sin alterar tu estructura
-            if (parsed.customerData) customerData = parsed.customerData;
-            if (parsed.eventName) eventName = parsed.eventName;
-          } else {
-            throw new Error("El string decodificado no mantiene formato JSON");
+            
+            // 🛠️ LA CLAVE: Forzar la extracción correcta respetando la estructura que envías en el Formulario
+            if (parsed.customerData) {
+              customerData = {
+                name: parsed.customerData.name || "Invitado",
+                email: parsed.customerData.email || "",
+                phone: parsed.customerData.phone || "",
+                tickets: Number(parsed.customerData.tickets) || 1
+              };
+            }
+            if (parsed.eventName) {
+              eventName = parsed.eventName;
+            }
           }
 
-          console.log("✅ customerData OK:", { email: customerData.email, eventName });
+          console.log("✅ customerData OK mapeado:", { email: customerData.email, eventName });
 
         } catch (err) {
           console.error("❌ Error decodificando merchantData:", err);
         }
       }
+
 
       // 🛠️ CAMBIO SEGURO CONTRA CAÍDAS: Si el email falla, registramos el error en logs pero dejamos que Redsys reciba un 200
       // para que el banco no piense que tu servidor web se ha caído.
