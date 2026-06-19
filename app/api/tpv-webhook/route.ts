@@ -119,6 +119,8 @@ export async function POST(request: Request) {
       }
 
       const numTickets = Number(customerData.tickets) || 1;
+      const pricePerTicket = 8; // precio por boleta en euros
+      const totalPaid = (pricePerTicket * numTickets).toFixed(2);
       const uniqueCode = `DM-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 
       const qrDataUrl = await QRCode.toDataURL(uniqueCode);
@@ -139,9 +141,11 @@ export async function POST(request: Request) {
           formBody.append("name",        customerData.name  || "Invitado");
           formBody.append("email",       customerData.email || "");
           formBody.append("phone",       customerData.phone || "");
+          formBody.append("tickets",     String(numTickets));
+          formBody.append("totalPaid",   totalPaid);
           formBody.append("uniqueCode",  uniqueCode);
           formBody.append("qrFormula",   `=IMAGE("https://api.qrserver.com/v1/create-qr-code/?data=${uniqueCode}")`);
-          // ── Campos nuevos de Cine para Niños ──
+          // ── Campos de Cine para Niños ──
           formBody.append("childAge",    cData?.childAge    || "");
           formBody.append("fatherName",  cData?.fatherName  || "");
           formBody.append("motherName",  cData?.motherName  || "");
@@ -207,7 +211,31 @@ export async function POST(request: Request) {
                     <tr>
                       <td style="padding:45px;background:#ffffff;">
                         <h2 style="color:#ff7542;margin-top:0;font-size:24px;">¡Hola ${customerData.name}!</h2>
-                        <p style="color:#333333;font-size:16px;line-height:1.6;margin-bottom:25px;">Tu inscripción se ha procesado con éxito. Presenta el código QR adjunto en la entrada el día del evento.</p>
+                        <p style="color:#333333;font-size:16px;line-height:1.6;margin-bottom:10px;">
+                          Tu inscripción se ha procesado con éxito. Presenta el código QR adjunto en la entrada el día del evento.
+                        </p>
+
+                        <!-- ── Resumen de compra ── -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;border:1px solid #eeeeee;border-radius:10px;overflow:hidden;">
+                          <tr style="background:#fff8f5;">
+                            <td style="padding:12px 16px;font-size:14px;color:#555555;border-bottom:1px solid #eeeeee;">
+                              <b>Boletas compradas</b>
+                            </td>
+                            <td style="padding:12px 16px;font-size:14px;color:#333333;border-bottom:1px solid #eeeeee;text-align:right;">
+                              ${numTickets} entrada${numTickets > 1 ? "s" : ""}
+                            </td>
+                          </tr>
+                          <tr style="background:#ffffff;">
+                            <td style="padding:12px 16px;font-size:14px;color:#555555;">
+                              <b>Total pagado</b>
+                            </td>
+                            <td style="padding:12px 16px;font-size:16px;font-weight:bold;color:#ff7542;text-align:right;">
+                              ${totalPaid}€
+                            </td>
+                          </tr>
+                        </table>
+
+                        <!-- ── QR ── -->
                         <div style="text-align:center;margin:30px 0;padding:20px;background:#fdfdfd;border:1px dashed #dddddd;border-radius:12px;">
                           <img src="cid:qr-code-inline" alt="Código de acceso QR" width="180" style="display:inline-block;border:0;height:auto;">
                           <p style="color:#666666;font-size:12px;margin:10px 0 0 0;font-family:monospace;">Código: ${uniqueCode}</p>
