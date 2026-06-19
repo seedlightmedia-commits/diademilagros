@@ -213,6 +213,8 @@ export async function POST(request: Request) {
                         <h2 style="color:#ff7542;margin-top:0;font-size:24px;">¡Hola ${customerData.name}!</h2>
                         <p style="color:#333333;font-size:16px;line-height:1.6;margin-bottom:10px;">
                           Tu inscripción se ha procesado con éxito. Presenta el código QR adjunto en la entrada el día del evento.
+                          Dirección: Cine Aribau Calle Aribau 8, Barcelona
+                          Metro L1, L2 Universitat
                         </p>
 
                         <!-- ── Resumen de compra ── -->
