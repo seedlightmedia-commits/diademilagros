@@ -76,6 +76,9 @@ export async function POST(request: Request) {
 
       <p>
       Tu inscripción ha sido confirmada correctamente.
+      <p>
+      
+      <p>
       Dirección: Cine Aribau Calle Aribau 8, Barcelona 
       Metro L1, L2 Universitat
       </p>
