@@ -45,19 +45,27 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
+        url: "/icon-48x48.png",
+        type: "image/png",
+        sizes: "48x48",
       },
       {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
+        url: "/icon-32x32.png",
+        type: "image/png",
+        sizes: "32x32",
       },
       {
-        url: "/icon1.png",
+        url: "/icon.ico",
+        sizes: "any",
+      },
+    ],
+    apple: [
+      {
+        url: "/icon-apple-180x180.png",
+        sizes: "180x180",
         type: "image/png",
       },
     ],
-    apple: "/apple-icon.png",
   },
   openGraph: {
     title: "Día de Milagros | Sanidad y Milagros en Barcelona",
