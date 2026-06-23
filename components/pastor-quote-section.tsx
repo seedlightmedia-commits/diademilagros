@@ -46,7 +46,7 @@ export function PastorQuoteSection() {
         {/* INFO DEL PASTOR: Organizado de forma limpia abajo del todo */}
         <div className="text-white/70 text-xs md:text-sm uppercase tracking-[0.2em] text-center font-sans">
           <p className="mb-0.5">PASTOR</p>
-          <p className="font-bold tracking-[0.25em] text-white">JOSE LUIS</p>
+          <p className="font-bold tracking-[0.25em] text-white">JOSE LUIS QUIÑONES</p>
         </div>
       </div>
     </section>
