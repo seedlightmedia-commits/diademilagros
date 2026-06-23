@@ -146,11 +146,10 @@ export async function POST(request: Request) {
           formBody.append("uniqueCode",  uniqueCode);
           formBody.append("qrFormula",   `=IMAGE("https://api.qrserver.com/v1/create-qr-code/?data=${uniqueCode}")`);
           // ── Campos de Cine para Niños ──
-          formBody.append("childAge",    cData?.childAge    || "");
-          formBody.append("fatherName",  cData?.fatherName  || "");
-          formBody.append("motherName",  cData?.motherName  || "");
-          formBody.append("fatherPhone", cData?.fatherPhone || "");
-          formBody.append("motherPhone", cData?.motherPhone || "");
+          formBody.append("childAge",      cData?.childAge      || "");
+          formBody.append("guardianName",  cData?.guardianName  || "");
+          formBody.append("guardianPhone", cData?.guardianPhone || "");
+          formBody.append("childNames",    Array.isArray(cData?.childNames) ? cData.childNames.join(", ") : (cData?.childNames || ""));
 
           console.error("📤 [SHEETS] Enviando petición POST...");
 
