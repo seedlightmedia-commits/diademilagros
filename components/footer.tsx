@@ -20,7 +20,10 @@ export function Footer() {
         {/* Copyright */}
         <div className="mt-6 text-center">
           <p className="text-white/30 text-xs">
-            © Todos los derechos reservados.
+            © 2026 día de milagros.
+          </p>
+          <p className="text-white/30 text-xs mt-2">
+            eventosbcn2026@gmail.com
           </p>
         </div>
       </div>

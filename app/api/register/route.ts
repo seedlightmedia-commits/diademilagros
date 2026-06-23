@@ -84,6 +84,11 @@ export async function POST(request: Request) {
       </p>
 
       <p>
+      <strong>Fecha y hora:</strong><br>
+      Sábado 1 de agosto, 17:00 horas
+      </p>
+
+      <p>
       <strong>Evento:</strong><br>
       ${data.eventName}
       </p>
@@ -114,7 +119,7 @@ export async function POST(request: Request) {
       <hr>
 
       <p style="text-align:center;color:#777;">
-      Ministerio Barcelona
+      día de milagros © 2026 |
       </p>
 
       </td>

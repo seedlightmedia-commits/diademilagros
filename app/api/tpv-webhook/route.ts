@@ -217,6 +217,11 @@ export async function POST(request: Request) {
                           Metro L1, L2 Universitat
                         </p>
 
+                         <p>
+                        <strong>Fecha y hora:</strong><br>
+                        Sábado 1 de agosto, 17:00 horas
+                        </p>
+
                         <!-- ── Resumen de compra ── -->
                         <table width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0;border:1px solid #eeeeee;border-radius:10px;overflow:hidden;">
                           <tr style="background:#fff8f5;">
