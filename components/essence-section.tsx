@@ -61,7 +61,7 @@ const essenceItems = [
     title: "PODER DE DIOS",
     description: "Sanidades y milagros como evidencia de su poder",
     icon: <RaisedHandsIcon />,
-    image: "Poder1.png",
+    image: "poder1.webp",
     cardPosition: "right", 
   },
   {
@@ -69,7 +69,7 @@ const essenceItems = [
     title: "PALABRA VIVA",
     description: "Mensaje de fe y esperanza",
     icon: <BibleIcon />,
-    image: "Palabra.jpg",
+    image: "Palabra.webp",
     cardPosition: "left", 
   },
   {
@@ -77,7 +77,7 @@ const essenceItems = [
     title: "SALVACIÓN",
     description: "Oportunidad para creer en Jesús.",
     icon: <CrossIcon />,
-    image: "/Salvacion.png",
+    image: "Salvacion.webp",
     cardPosition: "right", 
   },
   {
@@ -85,7 +85,7 @@ const essenceItems = [
     title: "AVIVAMIENTO",
     description: "Renovación del corazón",
     icon: <FlameIcon />,
-    image: "/Avivamiento.png",
+    image: "Avivamiento.webp",
     cardPosition: "left", 
   },
 ];
