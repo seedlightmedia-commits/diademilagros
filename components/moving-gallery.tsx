@@ -34,7 +34,7 @@ const topRowImages = [
     width: 180,
   },
   {
-    src: "cine7.webp",
+    src: "Cine7.webp",
     alt: "Galería 7",
     width: 140,
   },
@@ -68,12 +68,12 @@ const bottomRowImages = [
   },
  {
     src: "Iglesia8.webp",
-    alt: "Galería 12",
+    alt: "Galería 13",
     width: 200,
   },
    {
     src: "Iglesia9.webp",
-    alt: "Galería 12",
+    alt: "Galería 14",
     width: 200,
   },
 ];
