@@ -53,17 +53,15 @@ interface FormData {
   tickets: number;
   // Día de Milagros
   age?: string;
-  metro?: string;
   nationality?: string;
   invitedBy?: string;
   howDidYouMeetUs?: string;
   attendanceGroup?: string;
   // Cine para Niños
   childAge?: string;
-  fatherName?: string;
-  motherName?: string;
-  fatherPhone?: string;
-  motherPhone?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+  childNames?: string[];
 }
 
 export function UpcomingEventsSection() {
@@ -74,26 +72,45 @@ export function UpcomingEventsSection() {
     email: "",
     tickets: 1,
     age: "",
-    metro: "",
     nationality: "",
     invitedBy: "",
     howDidYouMeetUs: "",
     attendanceGroup: "",
     childAge: "",
-    fatherName: "",
-    motherName: "",
-    fatherPhone: "",
-    motherPhone: "",
+    guardianName: "",
+    guardianPhone: "",
+    childNames: [],
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationComplete, setRegistrationComplete] = useState(false);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "tickets" ? parseInt(value) || 1 : value,
-    }));
+
+    if (name === "tickets") {
+      const ticketCount = parseInt(value) || 1;
+      const needsChildNames = ticketCount >= 3;
+      setFormData((prev) => ({
+        ...prev,
+        tickets: ticketCount,
+        childNames: needsChildNames
+          ? Array.from({ length: ticketCount }, (_, i) => prev.childNames?.[i] ?? "")
+          : [],
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+
+  const handleChildNameChange = (index: number, value: string) => {
+    setFormData((prev) => {
+      const updated = [...(prev.childNames ?? [])];
+      updated[index] = value;
+      return { ...prev, childNames: updated };
+    });
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -120,7 +137,6 @@ export function UpcomingEventsSection() {
             uniqueCode,
             qrImage,
             age: formData.age,
-            metro: formData.metro,
             nationality: formData.nationality,
             invitedBy: formData.invitedBy,
             howDidYouMeetUs: formData.howDidYouMeetUs,
@@ -219,21 +235,20 @@ export function UpcomingEventsSection() {
       email: "",
       tickets: 1,
       age: "",
-      metro: "",
       nationality: "",
       invitedBy: "",
       howDidYouMeetUs: "",
       attendanceGroup: "",
       childAge: "",
-      fatherName: "",
-      motherName: "",
-      fatherPhone: "",
-      motherPhone: "",
+      guardianName: "",
+      guardianPhone: "",
+      childNames: [],
     });
     setRegistrationComplete(false);
   };
 
   const totalPrice = selectedEvent ? selectedEvent.price * formData.tickets : 0;
+  const showChildNames = selectedEvent?.id === 2 && formData.tickets >= 3;
 
   return (
     <section id="eventos" className="py-12 bg-white">
@@ -394,21 +409,6 @@ export function UpcomingEventsSection() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Metro más cercano a tu domicilio *
-                      </label>
-                      <input
-                        type="text"
-                        name="metro"
-                        value={formData.metro}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                        placeholder="Ej: Sagrada Família"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
                         Nacionalidad *
                       </label>
                       <input
@@ -497,12 +497,12 @@ export function UpcomingEventsSection() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Nombre del padre *
+                        Nombre del padre, madre o tutor legal *
                       </label>
                       <input
                         type="text"
-                        name="fatherName"
-                        value={formData.fatherName}
+                        name="guardianName"
+                        value={formData.guardianName}
                         onChange={handleInputChange}
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
@@ -512,42 +512,12 @@ export function UpcomingEventsSection() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Nombre de la madre *
-                      </label>
-                      <input
-                        type="text"
-                        name="motherName"
-                        value={formData.motherName}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                        placeholder="Nombre completo"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Teléfono del padre *
+                        Teléfono del padre, madre o tutor legal *
                       </label>
                       <input
                         type="tel"
-                        name="fatherPhone"
-                        value={formData.fatherPhone}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                        placeholder="+34 612 345 678"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Teléfono de la madre *
-                      </label>
-                      <input
-                        type="tel"
-                        name="motherPhone"
-                        value={formData.motherPhone}
+                        name="guardianPhone"
+                        value={formData.guardianPhone}
                         onChange={handleInputChange}
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
@@ -575,6 +545,34 @@ export function UpcomingEventsSection() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
                       />
                     </div>
+
+                    {/* ── Nombres de niños (emergente cuando tickets >= 3) ── */}
+                    {showChildNames && (
+                      <div className="border border-primary/20 rounded-xl p-4 bg-primary/5 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <p className="text-sm font-semibold text-primary flex items-center gap-2">
+                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-white text-xs">✓</span>
+                          Nombre de cada niño/a
+                        </p>
+                        <p className="text-xs text-gray-500 -mt-1">
+                          Por favor indica el nombre de cada niño/a para su entrada.
+                        </p>
+                        {Array.from({ length: formData.tickets }).map((_, i) => (
+                          <div key={i}>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                              Niño/a {i + 1} *
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.childNames?.[i] ?? ""}
+                              onChange={(e) => handleChildNameChange(i, e.target.value)}
+                              required
+                              className="w-full px-3 py-2 border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm bg-white"
+                              placeholder={`Nombre completo del niño/a ${i + 1}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     <div className="bg-gray-50 p-3 rounded-md">
                       <div className="flex justify-between text-sm">
