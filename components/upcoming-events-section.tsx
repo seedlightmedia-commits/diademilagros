@@ -248,7 +248,7 @@ export function UpcomingEventsSection() {
   };
 
   const totalPrice = selectedEvent ? selectedEvent.price * formData.tickets : 0;
-  const showChildNames = selectedEvent?.id === 2 && formData.tickets >= 3;
+  const showChildNames = selectedEvent?.id === 2 && formData.tickets >= 1;
 
   return (
     <section id="eventos" className="py-12 bg-white">
@@ -374,7 +374,7 @@ export function UpcomingEventsSection() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email {selectedEvent?.isFree ? "(opcional)" : "*"}
+                    Email *
                   </label>
                   <input
                     type="email"
@@ -548,7 +548,7 @@ export function UpcomingEventsSection() {
                       />
                     </div>
 
-                    {/* ── Nombres de niños (emergente cuando tickets >= 3) ── */}
+                    {/* ── Nombres de niños (emergente cuando tickets >= 1) ── */}
                     {showChildNames && (
                       <div className="border border-primary/20 rounded-xl p-4 bg-primary/5 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                         <p className="text-sm font-semibold text-primary flex items-center gap-2">
