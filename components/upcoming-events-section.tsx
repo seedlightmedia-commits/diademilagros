@@ -458,19 +458,21 @@ export function UpcomingEventsSection() {
                       </select>
                     </div>
 
-                    <div>
+             <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Grupo al que asistes *
+                        ¿Habías asistido antes a alguna de nuestras reuniones? *
                       </label>
-                      <input
-                        type="text"
+                      <select
                         name="attendanceGroup"
                         value={formData.attendanceGroup}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                        placeholder="Nombre del grupo"
-                      />
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm bg-white"
+                      >
+                        <option value="">Selecciona una opción</option>
+                        <option value="Sí">Sí</option>
+                        <option value="No">No</option>
+                      </select>
                     </div>
                   </>
                 )}
