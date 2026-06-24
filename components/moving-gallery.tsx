@@ -4,7 +4,7 @@ import Image from "next/image";
 
 const topRowImages = [
   {
-    src: "Recurso_91.jpg",
+    src: "Recurso_91.webp",
     alt: "Galería 1",
     width: 170,
   },
@@ -14,7 +14,7 @@ const topRowImages = [
     width: 180,
   },
   {
-    src: "Cine6.png",
+    src: "Cine.webp",
     alt: "Galería 3",
     width: 200,
   },
@@ -24,17 +24,17 @@ const topRowImages = [
     width: 180,
   },
   {
-    src: "Cine5.jpg",
+    src: "Cine5.webp",
     alt: "Galería 5",
     width: 160,
   },
   {
-    src: "Cine1.jpg",
+    src: "Cine1.webp",
     alt: "Galería 6",
     width: 180,
   },
   {
-    src: "cine71.png",
+    src: "cine7.webp",
     alt: "Galería 7",
     width: 140,
   },
@@ -52,7 +52,7 @@ const bottomRowImages = [
     width: 180,
   },
   {
-    src: "Iglesia2.jpg",
+    src: "Iglesia2.webp",
     alt: "Galería 10",
     width: 160,
   },
@@ -63,6 +63,16 @@ const bottomRowImages = [
   },
   {
     src: "Iglesia6.jpg",
+    alt: "Galería 12",
+    width: 200,
+  },
+ {
+    src: "Iglesia8.webp",
+    alt: "Galería 12",
+    width: 200,
+  },
+   {
+    src: "Iglesia9.webp",
     alt: "Galería 12",
     width: 200,
   },
