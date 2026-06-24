@@ -345,7 +345,7 @@ export function UpcomingEventsSection() {
                 {/* ── Campos comunes ── */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nombre completo *
+                    {selectedEvent?.id === 2 ? "Nombre de quien factura *" : "Nombre completo *"}
                   </label>
                   <input
                     type="text"
