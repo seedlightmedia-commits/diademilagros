@@ -536,16 +536,17 @@ export function UpcomingEventsSection() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Número de entradas *
                       </label>
-                      <input
-                        type="number"
+                      <select
                         name="tickets"
                         value={formData.tickets}
                         onChange={handleInputChange}
-                        min={1}
-                        max={10}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
-                      />
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm bg-white"
+                      >
+                        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                          <option key={n} value={n}>{n} {n === 1 ? "niño/a" : "niños/as"}</option>
+                        ))}
+                      </select>
                     </div>
 
                     {/* ── Nombres de niños (emergente cuando tickets >= 1) ── */}
