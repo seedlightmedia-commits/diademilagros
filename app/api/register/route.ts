@@ -119,7 +119,7 @@ export async function POST(request: Request) {
       <hr>
 
       <p style="text-align:center;color:#777;">
-      día de milagros © 2026 |
+      Día de milagros © 2026 |
       </p>
 
       </td>
