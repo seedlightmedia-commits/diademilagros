@@ -28,6 +28,13 @@ const abrilFatface = Abril_Fatface({
 });
 
 export const metadata: Metadata = {
+  // --- SE AJUSTA TU DOMINIO REAL (SIN WWW) PARA SOLUCIONAR LA INDEXACIÓN ---
+  metadataBase: new URL("https://diademilagros.com"),
+  alternates: {
+    canonical: "/",
+  },
+  // ------------------------------------------------------------------------
+
   title: "Día de Milagros | Sanidad y Milagros en Barcelona",
   description:
     "Cada milagro de Jesús tenía un propósito: mostrar que donde Jesús está, hay vida, fe y restauración. Eventos de sanidad y milagros en Barcelona, España.",
