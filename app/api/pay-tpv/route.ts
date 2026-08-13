@@ -69,7 +69,7 @@ export async function POST(request: Request) {
 
     // Retornamos los valores nativos listos para renderizarse en el <form> oculto del cliente
     return NextResponse.json({
-      url: "https://sis-t.redsys.es:25443/sis/realizarPago", // URL del Entorno de pruebas
+      url: "https://sis.redsys.es/sis/realizarPago",// URL del Entorno de pruebas
       params: merchantParametersBase64,  // Asignar al input name="Ds_MerchantParameters"
       signature: signatureBase64,        // Asignar al input name="Ds_Signature"
       signatureVersion: "HMAC_SHA256_V1", // Asignar al input name="Ds_SignatureVersion"
