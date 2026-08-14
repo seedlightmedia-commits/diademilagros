@@ -33,7 +33,7 @@ const upcomingEvents = [
     image: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Recurso3-R2JDtJacHbQ8U6fet0xIITCAMhjAAt.jpg",
     note: "Edades: 1 año (si camina) hasta 10 años. Película: a confirmar. Precio: a confirmar",
     isFree: false,
-    price: 8,
+    price: 1,
   },
 ];
 
