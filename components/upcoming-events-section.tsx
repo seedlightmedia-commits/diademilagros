@@ -46,6 +46,11 @@ const TPV_VIRTUAL_CONFIG = {
   environment: "sandbox",
 };
 
+interface ChildEntry {
+  name: string;
+  age: string;
+}
+
 interface FormData {
   name: string;
   phone: string;
@@ -61,7 +66,7 @@ interface FormData {
   childAge?: string;
   guardianName?: string;
   guardianPhone?: string;
-  childNames?: string[];
+  childNames?: ChildEntry[];
 }
 
 export function UpcomingEventsSection() {
@@ -94,7 +99,7 @@ export function UpcomingEventsSection() {
         ...prev,
         tickets: ticketCount,
         childNames: needsChildNames
-          ? Array.from({ length: ticketCount }, (_, i) => prev.childNames?.[i] ?? "")
+          ? Array.from({ length: ticketCount }, (_, i) => prev.childNames?.[i] ?? { name: "", age: "" })
           : [],
       }));
     } else {
@@ -108,7 +113,15 @@ export function UpcomingEventsSection() {
   const handleChildNameChange = (index: number, value: string) => {
     setFormData((prev) => {
       const updated = [...(prev.childNames ?? [])];
-      updated[index] = value;
+      updated[index] = { ...(updated[index] ?? { name: "", age: "" }), name: value };
+      return { ...prev, childNames: updated };
+    });
+  };
+
+  const handleChildAgeChange = (index: number, value: string) => {
+    setFormData((prev) => {
+      const updated = [...(prev.childNames ?? [])];
+      updated[index] = { ...(updated[index] ?? { name: "", age: "" }), age: value };
       return { ...prev, childNames: updated };
     });
   };
@@ -550,7 +563,7 @@ export function UpcomingEventsSection() {
                             </label>
                             <input
                               type="text"
-                              value={formData.childNames?.[i] ?? ""}
+                              value={formData.childNames?.[i]?.name ?? ""}
                               onChange={(e) => handleChildNameChange(i, e.target.value)}
                               required
                               className="w-full px-3 py-2 border border-primary/30 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm bg-white"
@@ -558,8 +571,8 @@ export function UpcomingEventsSection() {
                             />
                             <input
                               type="number"
-                              value={formData.childNames?.[i + 100] ?? ""}
-                              onChange={(e) => handleChildNameChange(i + 100, e.target.value)}
+                              value={formData.childNames?.[i]?.age ?? ""}
+                              onChange={(e) => handleChildAgeChange(i, e.target.value)}
                               required
                               min={1}
                               max={10}
